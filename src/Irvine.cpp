@@ -21,6 +21,9 @@ void Irvine::loop()
 {
     if (initSm())
     {
+        mqtt.loop();
+
+        m_temperature.loop();
     }
 }
 
@@ -28,6 +31,12 @@ boolean Irvine::initSm()
 {
     switch (m_initState)
     {
+    case INIT_STATE_TEMPERATURE_INIT:
+        if (temperatureInit())
+        {
+            m_initState = INIT_STATE_MODEM_RESET;
+        }
+        break;
     case INIT_STATE_MODEM_RESET:
         if (modemReset())
         {
@@ -70,6 +79,21 @@ boolean Irvine::initSm()
     }
 
     return false;
+}
+
+boolean Irvine::temperatureInit()
+{
+    m_temperature.setup();
+    m_temperature.setMeasurePeriod(10000u);
+    m_temperature.setOnTemperatureReady(
+        [this](float temperature) {
+            this->onTemperatureReady(temperature);
+    });
+    //   m_dataProvider.setOnVehicleListReady(
+    //   [this](QList<EgVehicleListModelData> &data) {
+    //     m_vehicleListModel->overrideData(data);
+    //   });
+    return true;
 }
 
 boolean Irvine::modemReset()
@@ -177,6 +201,8 @@ boolean Irvine::mqttConnect()
     {
         if (m_mqttConnectTimestamp == 0u)
         {
+            SerialMon.println("Setting MQTT data");
+
             mqtt.setServer(m_broker, 1883);
             mqtt.setCallback(
                 [this](char *topic, uint8_t *payload, unsigned int len)
@@ -185,11 +211,13 @@ boolean Irvine::mqttConnect()
 
         m_mqttConnectTimestamp = t;
 
-        if (mqtt.connect("GsmClientTest"))
+        if (mqtt.connect(m_deviceId.c_str()))
         {
-            mqtt.setKeepAlive(5);
             SerialMon.println("Mqtt connected!");
             mqtt.publish("wiwik_irvine_fw", "hello world");
+            SerialMon.println("Subscribing topic: " + m_topicUserId);
+            mqtt.subscribe(m_topicUserId.c_str());
+
             return true;
         }
 
@@ -221,5 +249,40 @@ void Irvine::initDone()
 
 void Irvine::mqttCallback(char *topic, uint8_t *payload, unsigned int len)
 {
-    SerialMon.println("MQTT callback");
+    String topicStr(topic);
+    String msg(payload, len);
+    SerialMon.println("MQTT callback topic: " + topicStr + " msg: " + msg);
+
+    if (0 == topicStr.compareTo(m_topicUserId))
+    {
+        SerialMon.println("User ID received: " + msg);
+        setUserId(msg);
+    }
+}
+
+void Irvine::setDeviceId(String &devId)
+{
+    m_deviceId = devId;
+
+    m_topicUserId = "devices/irvine/" + devId + "/user_id";
+}
+
+void Irvine::setUserId(String &userId)
+{
+    m_userId = userId;
+
+    m_topicMeasures = "measures/" + userId + "/irvine/" + m_deviceId;
+
+    mqtt.publish(m_topicMeasures.c_str(), (String("Hello ") + m_userId).c_str());
+}
+
+void Irvine::onTemperatureReady(float temperature)
+{
+    Serial.print("Temperature for the device 1 (index 0) is: ");
+    Serial.println(temperature);
+
+    String topic = m_topicMeasures + "/temperature1";
+    String data(temperature);
+
+    mqtt.publish(topic.c_str(), data.c_str());
 }
