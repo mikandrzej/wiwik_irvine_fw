@@ -3,11 +3,13 @@
 #define TINY_GSM_MODEM_SIM7600 // A7670's AT instruction is compatible with SIM7600
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
+#include <Wire.h>
 
 #define SerialAT Serial1
 #define PWR_PIN 4
 #define RESET 5
 #define BAT_EN 12
+#define MODEM_FLIGHT 25
 
 #define UART_BAUD 115200
 #define PIN_TX 26
@@ -24,6 +26,8 @@ void Irvine::loop()
         mqtt.loop();
 
         m_temperature.loop();
+
+        m_battery.loop();
     }
 }
 
@@ -34,7 +38,21 @@ boolean Irvine::initSm()
     case INIT_STATE_TEMPERATURE_INIT:
         if (temperatureInit())
         {
+            m_initState = INIT_STATE_BATTERY_INIT;
+        }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
+        }
+        break;
+    case INIT_STATE_BATTERY_INIT:
+        if (batteryInit())
+        {
             m_initState = INIT_STATE_MODEM_RESET;
+        }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
         }
         break;
     case INIT_STATE_MODEM_RESET:
@@ -42,11 +60,19 @@ boolean Irvine::initSm()
         {
             m_initState = INIT_STATE_MODEM_INIT;
         }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
+        }
         break;
     case INIT_STATE_MODEM_INIT:
         if (modemInit())
         {
             m_initState = INIT_STATE_SIM_UNLOCK;
+        }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
         }
         break;
     case INIT_STATE_SIM_UNLOCK:
@@ -54,11 +80,19 @@ boolean Irvine::initSm()
         {
             m_initState = INIT_STATE_WAIT_FOR_NETWORK;
         }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
+        }
         break;
     case INIT_STATE_WAIT_FOR_NETWORK:
         if (waitForNetwork())
         {
             m_initState = INIT_STATE_APN_CONNECT;
+        }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
         }
         break;
     case INIT_STATE_APN_CONNECT:
@@ -66,11 +100,19 @@ boolean Irvine::initSm()
         {
             m_initState = INIT_STATE_MQTT_CONNECT;
         }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
+        }
         break;
     case INIT_STATE_MQTT_CONNECT:
         if (mqttConnect())
         {
             m_initState = INIT_STATE_DONE;
+        }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
         }
         break;
     case INIT_STATE_DONE:
@@ -86,41 +128,57 @@ boolean Irvine::temperatureInit()
     m_temperature.setup();
     m_temperature.setMeasurePeriod(10000u);
     m_temperature.setOnTemperatureReady(
-        [this](float temperature) {
+        [this](float temperature)
+        {
             this->onTemperatureReady(temperature);
-    });
-    //   m_dataProvider.setOnVehicleListReady(
-    //   [this](QList<EgVehicleListModelData> &data) {
-    //     m_vehicleListModel->overrideData(data);
-    //   });
+        });
+
+    return true;
+}
+
+boolean Irvine::batteryInit()
+{
+    m_battery.setBatteryPeriod(5000u);
+    m_battery.setOnBatteryVoltageReady(
+        [this](float voltage)
+        {
+            this->onBatteryVoltageReady(voltage);
+        });
+
     return true;
 }
 
 boolean Irvine::modemReset()
 {
+    SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
+
+    if (m_battery.getBatteryVoltage() < m_battery_treshold)
+    {
+        return false;
+    }
+
     pinMode(BAT_EN, OUTPUT);
+    pinMode(RESET, OUTPUT);
+    pinMode(PWR_PIN, OUTPUT);
+    digitalWrite(BAT_EN, LOW);
+    delay(1000);
     digitalWrite(BAT_EN, HIGH);
 
     // A7670 Reset
-    pinMode(RESET, OUTPUT);
     digitalWrite(RESET, LOW);
     delay(100);
     digitalWrite(RESET, HIGH);
     delay(3000);
     digitalWrite(RESET, LOW);
 
-    pinMode(PWR_PIN, OUTPUT);
-    digitalWrite(PWR_PIN, LOW);
-    delay(100);
+    // Launch SIM7000
     digitalWrite(PWR_PIN, HIGH);
-    delay(1000);
+    delay(300);
     digitalWrite(PWR_PIN, LOW);
 
     Serial.println("\nWait after modem reset...");
 
     delay(10000);
-
-    SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
 
     return true;
 }
@@ -283,6 +341,28 @@ void Irvine::onTemperatureReady(float temperature)
 
     String topic = m_topicMeasures + "/temperature1";
     String data(temperature);
+
+    mqtt.publish(topic.c_str(), data.c_str());
+}
+
+void Irvine::onSolarVoltageReady(float voltage)
+{
+    Serial.print("Solar voltage is: ");
+    Serial.println(voltage);
+
+    String topic = m_topicMeasures + "/solar";
+    String data(voltage);
+
+    mqtt.publish(topic.c_str(), data.c_str());
+}
+
+void Irvine::onBatteryVoltageReady(float voltage)
+{
+    Serial.print("Battery voltage is: ");
+    Serial.println(voltage);
+
+    String topic = m_topicMeasures + "/battery";
+    String data(voltage);
 
     mqtt.publish(topic.c_str(), data.c_str());
 }

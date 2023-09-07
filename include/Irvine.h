@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "Temperature.h"
+#include "Battery.h"
 
 class Irvine
 {
@@ -30,6 +31,7 @@ private:
     enum
     {
         INIT_STATE_TEMPERATURE_INIT,
+        INIT_STATE_BATTERY_INIT,
         INIT_STATE_MODEM_RESET,
         INIT_STATE_MODEM_INIT,
         INIT_STATE_SIM_UNLOCK,
@@ -40,9 +42,13 @@ private:
     } m_initState;
 
     Temperature m_temperature;
+    Battery m_battery;
+
+    const float m_battery_treshold = 2900.0f;
 
     boolean initSm();
     boolean temperatureInit();
+    boolean batteryInit();
     boolean modemReset();
     boolean modemInit();
     boolean simUnlock();
@@ -55,6 +61,6 @@ private:
 
     void mqttCallback(char *topic, uint8_t *payload, unsigned int len);
     void onTemperatureReady(float temperature);
-
-
+    void onSolarVoltageReady(float voltage);
+    void onBatteryVoltageReady(float voltage);
 };
