@@ -1,3 +1,5 @@
+#include "Comm.h"
+
 #include "Battery.h"
 
 #define BAT_ADC 35
