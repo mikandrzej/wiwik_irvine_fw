@@ -4,22 +4,16 @@
 
 #include "Temperature.h"
 #include "Battery.h"
+#include "Comm.h"
 
 class Irvine
 {
 public:
     void loop();
-    void setDeviceId(String &devId);
 
 private:
     const char *m_pin = "0000";
 
-    const char *m_apn = "internet";
-    const char *m_apnUsername = "internet";
-    const char *m_apnPassword = "internet";
-
-    const char *m_broker = "iot.2canit.pl";
-    String m_deviceId = "";
     String m_topicUserId = "";
     String m_topicMeasures = "";
 
@@ -43,24 +37,14 @@ private:
 
     Temperature m_temperature;
     Battery m_battery;
+    Comm m_comm;
 
     const float m_battery_treshold = 2900.0f;
 
     boolean initSm();
     boolean temperatureInit();
     boolean batteryInit();
-    boolean modemReset();
-    boolean modemInit();
-    boolean simUnlock();
-    boolean waitForNetwork();
-    boolean apnConnect();
-    boolean mqttConnect();
-    void initDone();
-    void setUserId(String &userId);
 
-
-    void mqttCallback(char *topic, uint8_t *payload, unsigned int len);
     void onTemperatureReady(float temperature);
-    void onSolarVoltageReady(float voltage);
     void onBatteryVoltageReady(float voltage);
 };

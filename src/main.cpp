@@ -6,18 +6,15 @@
 
 Irvine irvine;
 
-void setup() {
-    Serial.begin(115200);
+void setup()
+{
+  Serial.begin(115200);
 
-    String deviceMac = WiFi.macAddress();
-    deviceMac.replace(":", "");
-    String deviceId = "irvine_" + deviceMac;
-
-    irvine.setDeviceId(deviceId);
-  // put your setup code here, to run once:
+  pinMode(21, OUTPUT); // led
+  pinMode(22, INPUT);  // charger detection
 }
 
-void loop() {
+void loop()
+{
   irvine.loop();
-  // put your main code here, to run repeatedly:
 }

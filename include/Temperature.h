@@ -4,7 +4,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#define ONE_WIRE_BUS 13
+#define ONE_WIRE_BUS 32
 
 class Temperature
 {
