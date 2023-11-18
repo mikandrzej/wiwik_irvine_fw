@@ -2,9 +2,12 @@
 #include "Comm.h"
 #include <WiFi.h>
 
+#include "EgTinyGsm.h"
+
 #define TINY_GSM_MODEM_SIM7600 // A7670's AT instruction is compatible with SIM7600
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
+#include <TinyGPSPlus.h>
 
 #define SerialAT Serial1
 #define UART_BAUD 115200
@@ -15,9 +18,11 @@
 #define RESET 5
 #define BAT_EN 12
 
-TinyGsm modem(SerialAT);
+EgTinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
 PubSubClient mqtt(client);
+
+TinyGPSPlus gps;
 
 void Comm::loop()
 {
@@ -60,6 +65,9 @@ void Comm::loop()
     break;
   case MODEM_INIT_APN:
     state_modem_init_apn();
+    break;
+  case MODEM_INIT_GPS:
+    state_modem_init_gps();
     break;
   case MODEM_INIT_MQTT:
     state_modem_init_mqtt();
@@ -242,8 +250,43 @@ void Comm::state_modem_init_apn()
     if (modem.isGprsConnected())
     {
       Serial.println("GPRS Connected");
-      change_state(MODEM_INIT_MQTT);
+      change_state(MODEM_INIT_GPS);
     }
+  }
+}
+
+void Comm::state_modem_init_gps()
+{
+  bool result = false;
+
+  do
+  {
+    modem.sendAT("+CGNSSPWR=0");
+    if (modem.waitResponse(30000) != 1)
+    {
+      break;
+    }
+    modem.sendAT("+CGNSSPWR=1");
+    if (modem.waitResponse(30000) != 1)
+    {
+      break;
+    }
+    if (modem.waitResponse(10000UL, "+CGNSSPWR: READY!") != 1)
+    {
+      break;
+    }
+    modem.sendAT("+CGNSSMODE=1");
+    if (modem.waitResponse(30000) != 1)
+    {
+      break;
+    }
+    result = true;
+  } while (false);
+
+  if (result)
+  {
+    Serial.println("GPS lauched");
+    change_state(MODEM_INIT_MQTT);
   }
 }
 
@@ -371,7 +414,7 @@ bool Comm::publish_measure_data(const String &type, const String &payload)
   {
     return false;
   }
-  char buf[100];
+  char buf[200];
   const String timestamp = get_time();
   sprintf(buf, "{\"timestamp\":\"%s\",\"%s\":\"%s\"}",
           timestamp.c_str(), type.c_str(), payload.c_str());

@@ -11,6 +11,8 @@ void Irvine::loop()
         m_temperature.loop();
 
         m_battery.loop();
+
+        m_gps.loop();
     }
 }
 
@@ -30,6 +32,16 @@ boolean Irvine::initSm()
         break;
     case INIT_STATE_BATTERY_INIT:
         if (batteryInit())
+        {
+            m_initState = INIT_STATE_GPS_INIT;
+        }
+        else
+        {
+            m_initState = INIT_STATE_TEMPERATURE_INIT;
+        }
+        break;
+    case INIT_STATE_GPS_INIT:
+        if (gpsInit())
         {
             m_initState = INIT_STATE_DONE;
         }
@@ -72,6 +84,17 @@ boolean Irvine::batteryInit()
     return true;
 }
 
+boolean Irvine::gpsInit()
+{
+    m_gps.setGpsPeriod(5000u);
+    m_gps.setOnGpsDataReady(
+        [this](GpsData &gpsData)
+        {
+            this->onGpsDataReady(gpsData);
+        });
+    return true;
+}
+
 void Irvine::onTemperatureReady(float temperature)
 {
     Serial.printf("temperature ready: %.2f\n", temperature);
@@ -81,4 +104,9 @@ void Irvine::onTemperatureReady(float temperature)
 void Irvine::onBatteryVoltageReady(float voltage)
 {
     m_comm.publish_measure_data("battery", String(voltage));
+}
+
+void Irvine::onGpsDataReady(GpsData &gpsData)
+{
+    m_comm.publish_measure_data("gps", gpsData.raw);
 }

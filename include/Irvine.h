@@ -5,6 +5,7 @@
 #include "Temperature.h"
 #include "Battery.h"
 #include "Comm.h"
+#include "Gps.h"
 
 class Irvine
 {
@@ -26,25 +27,23 @@ private:
     {
         INIT_STATE_TEMPERATURE_INIT,
         INIT_STATE_BATTERY_INIT,
-        INIT_STATE_MODEM_RESET,
-        INIT_STATE_MODEM_INIT,
-        INIT_STATE_SIM_UNLOCK,
-        INIT_STATE_WAIT_FOR_NETWORK,
-        INIT_STATE_APN_CONNECT,
-        INIT_STATE_MQTT_CONNECT,
+        INIT_STATE_GPS_INIT,
         INIT_STATE_DONE
     } m_initState;
 
     Temperature m_temperature;
     Battery m_battery;
     Comm m_comm;
+    Gps m_gps;
 
     const float m_battery_treshold = 2900.0f;
 
     boolean initSm();
     boolean temperatureInit();
     boolean batteryInit();
+    boolean gpsInit();
 
     void onTemperatureReady(float temperature);
     void onBatteryVoltageReady(float voltage);
+    void onGpsDataReady(GpsData &gpsData);
 };

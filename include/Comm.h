@@ -27,6 +27,7 @@ private:
     MODEM_INIT_SIM_UNLOCK,
     MODEM_INIT_WAIT_FOR_NETWORK,
     MODEM_INIT_APN,
+    MODEM_INIT_GPS,
     MODEM_INIT_MQTT,
     MODEM_INIT_WAIT_FOR_MQTT,
     MODEM_POWER_ON,
@@ -45,9 +46,11 @@ private:
   void state_modem_init_sim_unlock();
   void state_modem_init_wait_for_network();
   void state_modem_init_apn();
+  void state_modem_init_gps();
   void state_modem_init_mqtt();
   void state_modem_init_wait_for_mqtt();
   void state_modem_power_on();
+  void state_modem_loop();
   void check_power_condition();
   void publish_init_message();
   String build_topic(String lower_elements);
