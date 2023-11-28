@@ -6,13 +6,15 @@
 
 #define ONE_WIRE_BUS 32
 
+#define SENSORS_MAX 5u
+
 class Temperature
 {
 public:
     void setup();
     void loop();
     void setMeasurePeriod(uint32_t period_ms);
-    void setOnTemperatureReady(const std::function<void(float)> &newOnTemperatureReady);
+    void setOnTemperatureReady(const std::function<void(String&, float)> &newOnTemperatureReady);
 
 private:
     OneWire m_oneWire;
@@ -20,7 +22,8 @@ private:
     uint32_t m_period_timestamp;
     uint32_t m_period;
 
-    float m_tempC;
+    float m_tempC[SENSORS_MAX];
+    uint8_t address[SENSORS_MAX][8u];
 
     enum
     {
@@ -31,5 +34,5 @@ private:
         SENSORS_STATE_DELAY
     } m_sensorsState;
 
-    std::function<void(float)> m_onTemperatureReady;
+    std::function<void(String&, float)> m_onTemperatureReady;
 };

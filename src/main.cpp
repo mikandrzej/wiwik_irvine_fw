@@ -3,6 +3,7 @@
 #include <WiFi.h>
 
 #include "Irvine.h"
+#include "Configuration.h"
 
 Irvine irvine;
 
@@ -12,6 +13,9 @@ void setup()
 
   pinMode(21, OUTPUT); // led
   pinMode(22, INPUT);  // charger detection
+
+  // configuration.initSource();
+  // configuration.readConfig();
 }
 
 void loop()

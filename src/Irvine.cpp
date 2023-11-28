@@ -62,9 +62,9 @@ boolean Irvine::temperatureInit()
     m_temperature.setup();
     m_temperature.setMeasurePeriod(10000u);
     m_temperature.setOnTemperatureReady(
-        [this](float temperature)
+        [this](String &sensorAddress, float temperature)
         {
-            this->onTemperatureReady(temperature);
+            this->onTemperatureReady(sensorAddress, temperature);
         });
 
     return true;
@@ -95,18 +95,20 @@ boolean Irvine::gpsInit()
     return true;
 }
 
-void Irvine::onTemperatureReady(float temperature)
+void Irvine::onTemperatureReady(String &sensorAddress, float temperature)
 {
-    Serial.printf("temperature ready: %.2f\n", temperature);
-    m_comm.publish_measure_data("temperature1", String(temperature));
+    Serial.printf("temperature ready for %s: %.2f\n", sensorAddress.c_str(), temperature);
+    m_comm.publish_measure_data("temperature", sensorAddress, String(temperature));
 }
 
 void Irvine::onBatteryVoltageReady(float voltage)
 {
-    m_comm.publish_measure_data("battery", String(voltage));
+    String sensor_id = m_comm.getDeviceId() + "_battery";
+    m_comm.publish_measure_data("battery", sensor_id, String(voltage));
 }
 
 void Irvine::onGpsDataReady(GpsData &gpsData)
 {
-    m_comm.publish_measure_data("gps", gpsData.raw);
+    String sensor_id = m_comm.getDeviceId() + "_gps";
+    m_comm.publish_measure_data("gps", sensor_id, gpsData.m_raw);
 }

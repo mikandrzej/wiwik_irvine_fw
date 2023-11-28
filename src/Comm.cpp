@@ -234,6 +234,12 @@ void Comm::state_modem_init_wait_for_network()
   if (modem.isNetworkConnected())
   {
     Serial.println("Network connected - init APN");
+
+    m_sim_ccid = modem.getSimCCID();
+    Serial.println("SIM CCID: " + m_sim_ccid);
+    m_imsi = modem.getIMSI();
+    Serial.println("IMSI: " + m_imsi);
+
     change_state(MODEM_INIT_APN);
   }
   else if (millis() - m_sm_timestamp > 60000)
@@ -360,12 +366,19 @@ void Comm::publish_init_message()
                 modem_name + ",\n  " +
                 modem_info + "\n" +
                 "}";
-  mqtt.publish(build_topic(m_topic_service).c_str(), json.c_str());
+  String topic = build_measure_topic("service", m_deviceId + "_modem");
+  Serial.println("send data to topic: " + topic);
+  mqtt.publish(topic.c_str(), json.c_str());
 }
 
 String Comm::build_topic(String lower_elements)
 {
   return "irvine/" + m_deviceId + "/" + lower_elements;
+}
+
+String Comm::build_measure_topic(const String &sensor_type, const String &sensor_address)
+{
+  return "irvine/" + m_deviceId + "/" + sensor_type + "/" + sensor_address;
 }
 
 void Comm::change_state(state_e new_state)
@@ -408,7 +421,7 @@ void Comm::change_state(state_e new_state)
   m_state = new_state;
 }
 
-bool Comm::publish_measure_data(const String &type, const String &payload)
+bool Comm::publish_measure_data(const String &type, const String &sensor, const String &payload)
 {
   if (!out_connected)
   {
@@ -416,10 +429,10 @@ bool Comm::publish_measure_data(const String &type, const String &payload)
   }
   char buf[200];
   const String timestamp = get_time();
-  sprintf(buf, "{\"timestamp\":\"%s\",\"%s\":\"%s\"}",
-          timestamp.c_str(), type.c_str(), payload.c_str());
+  sprintf(buf, "{\"timestamp\":\"%s\",\"value\":\"%s\"}",
+          timestamp.c_str(), payload.c_str());
 
-  mqtt.publish(build_topic(type).c_str(), buf);
+  mqtt.publish(build_measure_topic(type, sensor).c_str(), buf);
 
   return true;
 }
@@ -444,6 +457,11 @@ String Comm::get_time(void)
   sprintf(buf, "%4u-%02u-%02u %02u:%02u:%02u GMT%+.0f", year, month, day, hour, minute, second, timezone);
 
   return String(buf);
+}
+
+String &Comm::getDeviceId()
+{
+  return m_deviceId;
 }
 
 void Comm::mqtt_callback(const String &topic, const String &message)

@@ -43,7 +43,7 @@ private:
     boolean batteryInit();
     boolean gpsInit();
 
-    void onTemperatureReady(float temperature);
+    void onTemperatureReady(String &sensorAddress, float temperature);
     void onBatteryVoltageReady(float voltage);
     void onGpsDataReady(GpsData &gpsData);
 };

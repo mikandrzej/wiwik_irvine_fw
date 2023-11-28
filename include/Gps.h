@@ -2,12 +2,18 @@
 
 #include <Arduino.h>
 
-struct GpsData 
+class GpsData 
 {
-    double speed;
-    int latitude;
-    int longitude;
-    String raw;
+    public:
+        GpsData(String &raw);
+        double m_speed;
+        double m_latitude;
+        double m_longitude;
+        double m_altitude;
+        double m_precision;
+        int m_satellites;
+        String m_timestamp;
+        String m_raw;
 };
 
 class Gps

@@ -9,8 +9,9 @@ class Comm
 public:
   void loop();
   void setBattery(Battery *battery);
-  bool publish_measure_data(const String &type, const String &payload);
+  bool publish_measure_data(const String &type, const String &sensor, const String &payload);
   String get_time(void);
+  String& getDeviceId();
 
 private:
   enum state_e
@@ -54,6 +55,7 @@ private:
   void check_power_condition();
   void publish_init_message();
   String build_topic(String lower_elements);
+  String build_measure_topic(const String &sensor_type, const String &sensor_address);
 
   void change_state(state_e new_state);
 
@@ -72,6 +74,8 @@ private:
 
   String m_modem_name;
   String m_modem_info;
+  String m_sim_ccid;
+  String m_imsi;
 
   const char *m_pin = "0000";
   const char *m_apn = "internet";

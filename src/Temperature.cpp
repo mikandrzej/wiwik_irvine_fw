@@ -12,6 +12,7 @@ void Temperature::setup()
 
 void Temperature::loop()
 {
+
     switch (m_sensorsState)
     {
     case SENSORS_STATE_IDLE:
@@ -29,14 +30,32 @@ void Temperature::loop()
         }
         break;
     case SENSORS_STATE_GET_TEMPERATURE:
-        m_tempC = m_sensors.getTempCByIndex(0);
-        if (m_tempC != DEVICE_DISCONNECTED_C)
         {
-            m_onTemperatureReady(m_tempC);
-        }
-        else
-        {
-            Serial.println("Error: Could not read temperature data");
+            for (uint8_t idx = 0u; idx < SENSORS_MAX; idx++)
+            {
+                bool found = m_sensors.getAddress(address[idx], idx);
+                if (!found)
+                {
+                    break;
+                }
+
+                m_tempC[idx] = m_sensors.getTempC(address[idx]);
+                if (m_tempC[idx] <= DEVICE_DISCONNECTED_C)
+                {
+                    Serial.println("Error: 1Wire device has been disconnected during read");
+                    break;
+                }
+                
+                if(m_onTemperatureReady)
+                {
+                    String sensor_address = "dallas_0x";
+                    for (uint8_t k = 0u; k < 8u; k++)
+                    {
+                        sensor_address += String(address[idx][k], HEX);
+                    }
+                    m_onTemperatureReady(sensor_address, m_tempC[idx]);
+                }
+            }
         }
         m_sensorsState = SENSORS_STATE_DELAY;
         break;
@@ -57,7 +76,7 @@ void Temperature::setMeasurePeriod(uint32_t period_ms)
     m_period = period_ms;
 }
 
-void Temperature::setOnTemperatureReady(const std::function<void(float)> &newOnTemperatureReady)
+void Temperature::setOnTemperatureReady(const std::function<void(String&, float)> &newOnTemperatureReady)
 {
     m_onTemperatureReady = newOnTemperatureReady;
 }
