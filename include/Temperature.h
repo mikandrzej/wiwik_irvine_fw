@@ -4,7 +4,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#define ONE_WIRE_BUS 32
+#define ONE_WIRE_BUS 21
 
 #define SENSORS_MAX 5u
 
@@ -20,7 +20,6 @@ private:
     OneWire m_oneWire;
     DallasTemperature m_sensors;
     uint32_t m_period_timestamp;
-    uint32_t m_period;
 
     float m_tempC[SENSORS_MAX];
     uint8_t address[SENSORS_MAX][8u];

@@ -1,5 +1,5 @@
 #include "Comm.h"
-
+#include "Configuration.h"
 #include "Battery.h"
 
 #define BAT_ADC 35
@@ -12,7 +12,7 @@ void Battery::loop()
     uint32_t diff;
     
     diff = t - m_last_battery_shot;
-    if (diff > m_battery_period)
+    if (diff > configuration.getBatteryReportInterval())
     {
         m_last_battery_shot = t;
 
@@ -24,11 +24,6 @@ void Battery::loop()
             m_onBatteryVoltageReady(voltage);
         }
     }
-}
-
-void Battery::setBatteryPeriod(const uint32_t period)
-{
-    m_battery_period = period;
 }
 
 static float getVoltage(const uint8_t pin)

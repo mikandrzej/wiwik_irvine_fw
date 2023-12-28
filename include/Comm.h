@@ -3,17 +3,20 @@
 #include <Arduino.h>
 
 #include "Battery.h"
+#include <ArduinoJson.h>
 
 class Comm
 {
 public:
   void loop();
   void setBattery(Battery *battery);
-  bool publish_measure_data(const String &type, const String &sensor, const String &payload);
+  bool publish_measure_data(const String &type, const String &sensor, const float value);
+  bool publish_measure_data(const String &type, const String &sensor, DynamicJsonDocument &jsonDocument);
+  bool publish_debug_data(const String &message);
   String get_time(void);
-  String& getDeviceId();
+  String &getDeviceId();
 
-private:
+// private:
   enum state_e
   {
     MODEM_UNINITIALIZED,
@@ -65,7 +68,7 @@ private:
 
   Battery *m_battery;
 
-  float m_battery_on_voltage = 3.5;
+  float m_battery_on_voltage = 3.0;
   float m_battery_treshold_voltage = 0.2;
 
   unsigned long m_sm_timestamp;
@@ -82,12 +85,12 @@ private:
   const char *m_apnUsername = "internet";
   const char *m_apnPassword = "internet";
 
-  const char *m_broker = "iot.2canit.pl";
-  const uint16_t m_broker_port = 1883u;
   String m_deviceId = "";
-
-  const char *m_topic_service = "service";
 
   bool out_connected = false;
   bool out_powered_up = false;
+
+  uint32_t m_lastNetworkShot = 0u;
 };
+
+extern Comm comm;

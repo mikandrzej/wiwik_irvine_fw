@@ -3,84 +3,279 @@
 #include <SPI.h>
 #include "File.h"
 #include "Configuration.h"
+#include <EEPROM.h>
+#include <esp_crc.h>
+
+#include <Preferences.h>
 
 #define BOARD_MISO_PIN (2)
 #define BOARD_MOSI_PIN (15)
 #define BOARD_SCK_PIN (14)
 #define BOARD_SD_CS_PIN (13)
 
+#define EEPROM_SIZE sizeof(eeprom_data_s)
+
+Preferences prefs;
+
 void Configuration::initSource()
 {
-    SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
-    if (!SD.begin(BOARD_SD_CS_PIN))
-    {
-        Serial.println("Card Mount Failed");
-        return;
-    }
-    uint8_t cardType = SD.cardType();
+    // EEPROM.begin(EEPROM_SIZE);
+    prefs.begin("configuration"); // namespace
+}
 
-    if (cardType == CARD_NONE)
-    {
-        Serial.println("No SD card attached");
-        return;
-    }
-
-    Serial.print("SD Card Type: ");
-    if (cardType == CARD_MMC)
-    {
-        Serial.println("MMC");
-    }
-    else if (cardType == CARD_SD)
-    {
-        Serial.println("SDSC");
-    }
-    else if (cardType == CARD_SDHC)
-    {
-        Serial.println("SDHC");
-    }
-    else
-    {
-        Serial.println("UNKNOWN");
-    }
-
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);
-
-    listDir(SD, "/", 0);
-
-    Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
-    Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
-
-    m_sourceInit = true;
+void Configuration::printConfig()
+{
+    Serial.printf("Configuration:\r\n");
+    Serial.printf("MQTT server: %s\r\n", m_currentConfig.mqtt_server_address);
+    Serial.printf("MQTT port: %d\r\n", m_currentConfig.mqtt_server_port);
+    Serial.printf("MQTT username: %s\r\n", m_currentConfig.mqtt_server_login);
+    Serial.printf("MQTT password: %s\r\n", m_currentConfig.mqtt_server_password);
+    Serial.printf("Temperature report interval: %u\r\n", m_currentConfig.temperature_report_interval);
+    Serial.printf("GPS report interval: %u\r\n", m_currentConfig.gps_report_interval);
+    Serial.printf("Battery report interval: %u\r\n", m_currentConfig.battery_report_interval);
 }
 
 void Configuration::readConfig()
 {
-    if(!m_sourceInit)
+    m_configReady = false;
+
+    int retries = 3;
+    do
     {
-        Serial.println("SD Source not initialised. Please check your SD card.");
-        return;
+        // EEPROM.readBytes(0u, &m_currentConfig, sizeof(m_currentConfig));
+
+        prefs.getBytes("configuration", &m_currentConfig, sizeof(m_currentConfig));
+        uint32_t crc = calculateCrc();
+        if (crc == m_currentConfig.crc)
+        {
+            Serial.println("Configration read succesfully");
+            Serial.printf("Configration CRC: 0x%08x\r\n", m_currentConfig.crc);
+            m_configReady = true;
+            break;
+        }
+
+        Serial.println("Error during configuration read, retry...");
+        retries--;
+    } while (retries > 0);
+
+    if (!m_configReady)
+    {
+        Serial.println("Restoring default configuration.");
+        defaultConfig();
     }
-    readReportInterval();
+
+    printConfig();
 }
 
-bool Configuration::readReportInterval()
+String Configuration::getMqttServerAddress()
 {
-    File file = SD.open(m_report_interval_path.c_str());
-    uint8_t data[10];
-    size_t result = file.read(data, sizeof(data));
-    if (-1 == result)
+    if (m_configReady)
+        return String(m_currentConfig.mqtt_server_address);
+    return String();
+}
+
+uint16_t Configuration::getMqttServerPort()
+{
+    if (m_configReady)
+        return m_currentConfig.mqtt_server_port;
+    return 0;
+}
+
+String Configuration::getMqttServerLogin()
+{
+    if (m_configReady)
+        return String(m_currentConfig.mqtt_server_login);
+    return String();
+}
+
+String Configuration::getMqttServerPassword()
+{
+    if (m_configReady)
+        return String(m_currentConfig.mqtt_server_password);
+    return String();
+}
+
+uint32_t Configuration::getGpsReportInterval()
+{
+    if (m_configReady)
+        return m_currentConfig.gps_report_interval;
+    return 0;
+}
+
+uint32_t Configuration::getTemperatureReportInterval()
+{
+    if (m_configReady)
+        return m_currentConfig.temperature_report_interval;
+    return 0;
+}
+
+uint32_t Configuration::getBatteryReportInterval()
+{
+    if (m_configReady)
+        return m_currentConfig.battery_report_interval;
+    return 0;
+}
+
+uint32_t Configuration::getNetworkReportInterval()
+{
+    if (m_configReady)
+        return m_currentConfig.network_report_interval;
+    return 0;
+}
+
+uint8_t Configuration::getDebugMode()
+{
+    if (m_configReady)
+        return m_currentConfig.debug_mode;
+    return 0;
+}
+
+bool Configuration::saveConfig()
+{
+
+    int retries = 3;
+    do
     {
-        Serial.println("Unable to read ReportInterval");
-        return false;
+        eeprom_data_s temp_config;
+        prefs.getBytes("configuration", &temp_config, sizeof(temp_config));
+        if (0 == memcmp(&temp_config, &m_currentConfig, sizeof(temp_config)))
+        {
+            Serial.println("No changes in configuration");
+            return true;
+        }
+
+        Serial.println("Trying to save configuration");
+
+        m_currentConfig.crc = calculateCrc();
+        prefs.putBytes("configuration", &m_currentConfig, sizeof(m_currentConfig));
+
+        Serial.println("Verifying configuration...");
+        prefs.getBytes("configuration", &temp_config, sizeof(temp_config));
+        if (0 == memcmp(&temp_config, &m_currentConfig, sizeof(temp_config)))
+        {
+            Serial.println("Configuration saved");
+            Serial.printf("Configration CRC: 0x%08x\r\n", m_currentConfig.crc);
+            m_configReady = true;
+            return true;
+        }
+
+        retries--;
+    } while (retries > 0);
+
+    Serial.println("Failed to save configuration");
+    return false;
+}
+
+uint32_t Configuration::calculateCrc()
+{
+    return esp_crc32_le(0u, (const uint8_t *)&m_currentConfig, sizeof(m_currentConfig) - 4u);
+}
+
+void Configuration::setMqttServerAddress(String &address)
+{
+    if (address.length() < sizeof(m_currentConfig.mqtt_server_address))
+    {
+        memset(m_currentConfig.mqtt_server_address,
+               0,
+               sizeof(m_currentConfig.mqtt_server_address));
+        memcpy(m_currentConfig.mqtt_server_address,
+               address.c_str(),
+               sizeof(m_currentConfig.mqtt_server_address));
+        m_configChanged = true;
     }
+}
 
-    String readData(data, result);
-    m_reportInterval = readData.toInt();
+void Configuration::setMqttServerPort(uint16_t port)
+{
+    m_currentConfig.mqtt_server_port = port;
+    m_configChanged = true;
+}
 
-    Serial.printf("Read ReportInterval value = %d\r\n", m_reportInterval);
-    return true;
+void Configuration::setMqttServerLogin(String &login)
+{
+    if (login.length() < sizeof(m_currentConfig.mqtt_server_login))
+    {
+        memset(m_currentConfig.mqtt_server_login,
+               0,
+               sizeof(m_currentConfig.mqtt_server_login));
+        memcpy(m_currentConfig.mqtt_server_login,
+               login.c_str(),
+               sizeof(m_currentConfig.mqtt_server_login));
+        m_configChanged = true;
+    }
+}
 
+void Configuration::setMqttServerPassword(String &password)
+{
+    if (password.length() < sizeof(m_currentConfig.mqtt_server_password))
+    {
+        memset(m_currentConfig.mqtt_server_password,
+               0,
+               sizeof(m_currentConfig.mqtt_server_password));
+        memcpy(m_currentConfig.mqtt_server_password,
+               password.c_str(),
+               sizeof(m_currentConfig.mqtt_server_password));
+        m_configChanged = true;
+    }
+}
+
+void Configuration::setGpsReportInterval(const uint32_t interval)
+{
+    m_currentConfig.gps_report_interval = interval;
+    m_configChanged = true;
+}
+
+void Configuration::setTemperatureReportInterval(const uint32_t interval)
+{
+    m_currentConfig.temperature_report_interval = interval;
+    m_configChanged = true;
+}
+
+void Configuration::setBatteryReportInterval(const uint32_t interval)
+{
+    m_currentConfig.battery_report_interval = interval;
+    m_configChanged = true;
+}
+
+void Configuration::setNetworkReportInterval(const uint32_t interval)
+{
+    m_currentConfig.network_report_interval = interval;
+    m_configChanged = true;
+}
+
+void Configuration::setDebugMode(const uint8_t mode)
+{
+    m_currentConfig.debug_mode = mode;
+    m_configChanged = true;
+}
+
+void Configuration::cyclic()
+{
+    if (m_configChanged)
+    {
+        if (saveConfig())
+        {
+            m_configChanged = false;
+        }
+    }
+}
+
+void Configuration::defaultConfig()
+{
+    memset(&m_currentConfig.mqtt_server_address, 0, sizeof(m_currentConfig.mqtt_server_address));
+    sprintf(m_currentConfig.mqtt_server_address, "iot.2canit.pl");
+    memset(&m_currentConfig.mqtt_server_login, 0, sizeof(m_currentConfig.mqtt_server_login));
+    memset(&m_currentConfig.mqtt_server_password, 0, sizeof(m_currentConfig.mqtt_server_password));
+    m_currentConfig.mqtt_server_port = 1883u;
+    m_currentConfig.battery_report_interval = 20000u;
+    m_currentConfig.temperature_report_interval = 10000u;
+    m_currentConfig.gps_report_interval = 10000u;
+    m_currentConfig.network_report_interval = 10000u;
+    m_currentConfig.debug_mode = 0u;
+
+    Serial.println("Saving default configuration");
+
+    saveConfig();
 }
 
 Configuration configuration;

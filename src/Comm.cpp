@@ -9,6 +9,8 @@
 #include <PubSubClient.h>
 #include <TinyGPSPlus.h>
 
+#include "Configuration.h"
+
 #define SerialAT Serial1
 #define UART_BAUD 115200
 #define PIN_TX 26
@@ -24,9 +26,27 @@ PubSubClient mqtt(client);
 
 TinyGPSPlus gps;
 
+Comm comm;
+
+static void blink(int times)
+{
+  return;
+  for (int k = 0; k < times; k++)
+  {
+    digitalWrite(22, 1);
+    delay(200);
+    digitalWrite(22, 0);
+    delay(200);
+  }
+  delay(300);
+}
+
 void Comm::loop()
 {
   check_power_condition();
+
+  if (m_state < MODEM_POWER_ON)
+    blink((int)m_state);
 
   switch (m_state)
   {
@@ -202,13 +222,20 @@ void Comm::state_modem_init_fail_delay()
   if (millis() - m_sm_timestamp > 10000)
   {
     change_state(MODEM_POWER_OFF);
+    for (int k = 0; k < 7; k++)
+    {
+      digitalWrite(22, 1);
+      delay(100);
+      digitalWrite(22, 0);
+      delay(100);
+    }
   }
 }
 
 void Comm::state_modem_init_sim_unlock()
 {
-  SimStatus sim_status = modem.getSimStatus(0);
-  if (modem.getSimStatus() == SIM_LOCKED)
+  SimStatus sim_status = modem.getSimStatus(2000);
+  if (sim_status == SIM_LOCKED)
   {
     if (modem.simUnlock(m_pin))
     {
@@ -222,10 +249,15 @@ void Comm::state_modem_init_sim_unlock()
       change_state(MODEM_INFINITE_LOOP);
     }
   }
+  else if (sim_status == SIM_READY)
+  {
+    Serial.println("PIN code is not enabled");
+    change_state(MODEM_INIT_WAIT_FOR_NETWORK);
+  }
   else
   {
-    Serial.println("Wrong SIM satus: " + String(sim_status));
-    change_state(MODEM_INFINITE_LOOP);
+    Serial.println("SIM ERROR: " + String(sim_status));
+    change_state(MODEM_INIT_FAIL_DELAY);
   }
 }
 
@@ -242,10 +274,10 @@ void Comm::state_modem_init_wait_for_network()
 
     change_state(MODEM_INIT_APN);
   }
-  else if (millis() - m_sm_timestamp > 60000)
+  else if (millis() - m_sm_timestamp > 10000)
   {
     Serial.println("Network not found - reset");
-    change_state(MODEM_POWER_DOWN);
+    change_state(MODEM_INIT_FAIL_DELAY);
   }
 }
 
@@ -257,8 +289,12 @@ void Comm::state_modem_init_apn()
     {
       Serial.println("GPRS Connected");
       change_state(MODEM_INIT_GPS);
+      return;
     }
   }
+
+  Serial.println("GPRS init fail - reset");
+  change_state(MODEM_INIT_FAIL_DELAY);
 }
 
 void Comm::state_modem_init_gps()
@@ -268,12 +304,12 @@ void Comm::state_modem_init_gps()
   do
   {
     modem.sendAT("+CGNSSPWR=0");
-    if (modem.waitResponse(30000) != 1)
+    if (modem.waitResponse(1000) != 1)
     {
       break;
     }
     modem.sendAT("+CGNSSPWR=1");
-    if (modem.waitResponse(30000) != 1)
+    if (modem.waitResponse(1000) != 1)
     {
       break;
     }
@@ -281,8 +317,8 @@ void Comm::state_modem_init_gps()
     {
       break;
     }
-    modem.sendAT("+CGNSSMODE=1");
-    if (modem.waitResponse(30000) != 1)
+    modem.sendAT("+CGNSSMODE=3");
+    if (modem.waitResponse(1000) != 1)
     {
       break;
     }
@@ -294,16 +330,19 @@ void Comm::state_modem_init_gps()
     Serial.println("GPS lauched");
     change_state(MODEM_INIT_MQTT);
   }
+  else
+  {
+    Serial.println("GPS init fail - reset");
+    change_state(MODEM_INIT_FAIL_DELAY);
+  }
 }
 
 void Comm::state_modem_init_mqtt()
 {
-  mqtt.setServer(m_broker, m_broker_port);
-  mqtt.setCallback(
-      [this](char *topic, uint8_t *payload, unsigned int len)
-      {
-        mqtt_callback(String(topic), String((const char *)payload, len));
-      });
+  static String url = configuration.getMqttServerAddress();
+  uint16_t port = configuration.getMqttServerPort();
+  Serial.printf("Setting MQTT server to: %s:%d\r\n", url.c_str(), port);
+  mqtt.setServer(url.c_str(), port);
 
   Serial.println("Waiting for MQTT");
 
@@ -312,15 +351,39 @@ void Comm::state_modem_init_mqtt()
 
 void Comm::state_modem_init_wait_for_mqtt()
 {
-  if (mqtt.connect(m_deviceId.c_str()))
+  static String login = configuration.getMqttServerLogin();
+  static String pass = configuration.getMqttServerPassword();
+
+  bool result;
+  if (login.length() > 0)
+  {
+    Serial.printf("Connecting to MQTT: %s / %s\r\n", login.c_str(), pass.c_str());
+    result = mqtt.connect(m_deviceId.c_str(),
+                          login.c_str(),
+                          pass.c_str());
+  }
+  else
+  {
+    Serial.printf("Connecting to MQTT without login\r\n");
+    result = mqtt.connect(m_deviceId.c_str());
+  }
+  if (result)
   {
     Serial.println("MQTT Connected - sending hello message");
 
-    mqtt.subscribe(build_topic(m_topic_service).c_str());
+    mqtt.setCallback([this](char *topic, uint8_t *payload, unsigned int len)
+                     { this->mqtt_callback(String(topic), String(payload, len)); });
+    static String subscribed_topic = build_topic("service/#");
+    mqtt.subscribe(subscribed_topic.c_str());
 
     publish_init_message();
 
     change_state(MODEM_POWER_ON);
+  }
+  else
+  {
+    Serial.println("MQTT init fail - reset");
+    change_state(MODEM_INIT_FAIL_DELAY);
   }
 }
 
@@ -338,37 +401,70 @@ void Comm::state_modem_power_on()
   {
     change_state(MODEM_INIT_MQTT);
   }
+  else
+  {
+    mqtt.loop();
+    if (millis() - m_lastNetworkShot > configuration.getNetworkReportInterval())
+    {
+      m_lastNetworkShot = millis();
+      String sensor_id = comm.getDeviceId() + "_network";
+      DynamicJsonDocument doc(200);
+      
+      doc["op"] = modem.getOperator();
+      doc["signal"] = modem.getSignalQuality();
+      doc["mode"] = modem.getNetworkMode();
+      doc["temp"] = modem.getTemperature();
+
+      char buf[200];
+      serializeJson(doc, buf, sizeof(buf));
+      Serial.println(buf);
+      comm.publish_measure_data("service", sensor_id, doc);
+    }
+  }
 }
 
 void Comm::check_power_condition()
 {
-  if (m_battery->getBatteryVoltage() < m_battery_on_voltage - m_battery_treshold_voltage)
+  // if (m_battery->getBatteryVoltage() < m_battery_on_voltage - m_battery_treshold_voltage)
+  // {
+  //   change_state(MODEM_POWER_OFF);
+  //   for (int k = 0; k < 3; k++)
+  //   {
+  //     digitalWrite(22, 1);
+  //     delay(100);
+  //     digitalWrite(22, 0);
+  //     delay(100);
+  //   }
+  // }
+  // else
+  if (false == requested_power_on)
   {
     change_state(MODEM_POWER_OFF);
-  }
-  else if (false == requested_power_on)
-  {
-    change_state(MODEM_POWER_OFF);
+    for (int k = 0; k < 5; k++)
+    {
+      digitalWrite(22, 1);
+      delay(100);
+      digitalWrite(22, 0);
+      delay(100);
+    }
   }
 }
 
 void Comm::publish_init_message()
 {
+  DynamicJsonDocument jsonDocument(300);
+  char buf[550];
+  jsonDocument["name"] = modem.getModemName();
+  jsonDocument["ccid"] = modem.getSimCCID();
+  jsonDocument["imsi"] = modem.getIMSI();
+  jsonDocument["imei"] = modem.getIMEI();
 
-  String modem_name = "\"modem_name\":\"" + m_modem_name + "\"";
+  size_t len = serializeJson(jsonDocument, buf, sizeof(buf));
 
-  String modem_info = "\"modem_info\":\"" + m_modem_info + "\"";
-
-  String timestamp = "\"timestamp\":\"" + get_time() + "\"";
-
-  String json = "{\n  " +
-                timestamp + ",\n  " +
-                modem_name + ",\n  " +
-                modem_info + "\n" +
-                "}";
-  String topic = build_measure_topic("service", m_deviceId + "_modem");
-  Serial.println("send data to topic: " + topic);
-  mqtt.publish(topic.c_str(), json.c_str());
+  String sensor = m_deviceId + "_modem";
+  String topic = build_measure_topic("service", sensor);
+  Serial.println("send data" + String(buf, len) + "to topic: " + topic);
+  mqtt.publish(topic.c_str(), buf, len);
 }
 
 String Comm::build_topic(String lower_elements)
@@ -421,20 +517,56 @@ void Comm::change_state(state_e new_state)
   m_state = new_state;
 }
 
-bool Comm::publish_measure_data(const String &type, const String &sensor, const String &payload)
+bool Comm::publish_measure_data(const String &type, const String &sensor, const float value)
 {
   if (!out_connected)
   {
     return false;
   }
-  char buf[200];
-  const String timestamp = get_time();
-  sprintf(buf, "{\"timestamp\":\"%s\",\"value\":\"%s\"}",
-          timestamp.c_str(), payload.c_str());
+  DynamicJsonDocument jsonDocument(200);
+  char buf[256];
+  jsonDocument["timestamp"] = get_time();
+  jsonDocument["value"] = value;
 
-  mqtt.publish(build_measure_topic(type, sensor).c_str(), buf);
+  size_t len = serializeJson(jsonDocument, buf, sizeof(buf));
+
+  if (len > 0u)
+  {
+    mqtt.publish(build_measure_topic(type, sensor).c_str(), buf);
+  }
+  else
+  {
+    Serial.println("Deserialization error");
+  }
 
   return true;
+}
+
+bool Comm::publish_measure_data(const String &type, const String &sensor, DynamicJsonDocument &jsonDocument)
+{
+  if (!out_connected)
+  {
+    return false;
+  }
+  jsonDocument["timestamp"] = get_time();
+
+  char buf[256];
+  size_t len = serializeJson(jsonDocument, buf, sizeof(buf));
+  if (len > 0u)
+  {
+    mqtt.publish(build_measure_topic(type, sensor).c_str(), buf);
+  }
+  else
+  {
+    Serial.println("Deserialization error");
+  }
+
+  return true;
+}
+
+bool Comm::publish_debug_data(const String &message)
+{
+  mqtt.publish(build_measure_topic("debug", m_deviceId + "_debug").c_str(), message.c_str());
 }
 
 String Comm::get_time(void)
@@ -466,10 +598,93 @@ String &Comm::getDeviceId()
 
 void Comm::mqtt_callback(const String &topic, const String &message)
 {
+  Serial.println("Rcv mqtt data: " + topic + ": " + message);
+  String service_topic = build_topic("service");
+  if (topic.startsWith(service_topic))
+  {
+    String type = topic.substring(service_topic.length() + 1);
+    mqtt_service_callback(type, message);
+  }
 }
 
 void Comm::mqtt_service_callback(const String &type, const String &payload)
 {
+  Serial.println(("Rcv service data: " + type + ": " + payload).c_str());
+  if (type == "get_config")
+  {
+    mqtt.publish(build_topic("service/config").c_str(), "config will be here");
+  }
+  else if (type == "set_config")
+  {
+    DynamicJsonDocument jsonDocument(200);
+    DeserializationError err = deserializeJson(jsonDocument, payload.c_str());
+    if (err == DeserializationError::Ok)
+    {
+      if (jsonDocument.containsKey("mqtt_server_address"))
+      {
+        String mqtt_server((const char *)jsonDocument["mqtt_server_address"]);
+        Serial.printf("Setting mqtt_server_address to: %s\r\n", mqtt_server.c_str());
+        configuration.setMqttServerAddress(mqtt_server);
+      }
+      if (jsonDocument.containsKey("mqtt_server_port"))
+      {
+        uint16_t port = jsonDocument["mqtt_server_port"].as<uint16_t>();
+        Serial.printf("Setting mqtt_server_port to: %u\r\n", port);
+        configuration.setMqttServerPort(port);
+      }
+      if (jsonDocument.containsKey("mqtt_server_login"))
+      {
+        String mqtt_login((const char *)jsonDocument["mqtt_server_login"]);
+        Serial.printf("Setting mqtt_server_login to: %s\r\n", mqtt_login.c_str());
+        configuration.setMqttServerLogin(mqtt_login);
+      }
+      if (jsonDocument.containsKey("mqtt_server_password"))
+      {
+        String mqtt_password((const char *)jsonDocument["mqtt_server_password"]);
+        Serial.printf("Setting mqtt_server_password to: %s\r\n", mqtt_password.c_str());
+        configuration.setMqttServerLogin(mqtt_password);
+      }
+      if (jsonDocument.containsKey("temperature_interval"))
+      {
+        uint32_t interval = jsonDocument["temperature_interval"].as<uint32_t>();
+        Serial.printf("Setting temperature_interval to: %u\r\n", interval);
+        configuration.setTemperatureReportInterval(interval);
+      }
+      if (jsonDocument.containsKey("gps_interval"))
+      {
+        uint32_t interval = jsonDocument["gps_interval"].as<uint32_t>();
+        Serial.printf("Setting gps_interval to: %u\r\n", interval);
+        configuration.setGpsReportInterval(interval);
+      }
+      if (jsonDocument.containsKey("battery_interval"))
+      {
+        uint32_t interval = jsonDocument["battery_interval"].as<uint32_t>();
+        Serial.printf("Setting battery_interval to: %u\r\n", interval);
+        configuration.setBatteryReportInterval(interval);
+      }
+      if (jsonDocument.containsKey("debug_mode"))
+      {
+        uint8_t mode = jsonDocument["debug_mode"].as<uint8_t>();
+        Serial.printf("Setting debug_mode to: %u\r\n", mode);
+        configuration.setDebugMode(mode);
+      }
+      mqtt.publish(build_topic("service/set_config_response").c_str(), "Configuration saved");
+    }
+    else
+    {
+      mqtt.publish(build_topic("service/set_config_response").c_str(),
+                   (String("Pasing error: ") + String(err.c_str())).c_str());
+    }
+  }
+  else if (type == "reboot")
+  {
+    Serial.println("Reboot in 10 seconds");
+    mqtt.publish(build_topic("service/reboot_response").c_str(), "Reboot in 10 seconds");
+
+    delay(10000);
+
+    ESP.restart();
+  }
 }
 
 void Comm::mqtt_irvine_callback(const String &type, const String &payload)

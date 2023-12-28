@@ -12,7 +12,7 @@ class Irvine
 public:
     void loop();
 
-private:
+// private:
     const char *m_pin = "0000";
 
     String m_topicUserId = "";
@@ -33,7 +33,6 @@ private:
 
     Temperature m_temperature;
     Battery m_battery;
-    Comm m_comm;
     Gps m_gps;
 
     const float m_battery_treshold = 2900.0f;

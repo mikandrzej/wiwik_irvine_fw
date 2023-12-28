@@ -1,4 +1,5 @@
 #include "Temperature.h"
+#include "Configuration.h"
 
 void Temperature::setup()
 {
@@ -62,18 +63,13 @@ void Temperature::loop()
     case SENSORS_STATE_DELAY:
         uint32_t t = millis();
         uint32_t diff = t - m_period_timestamp;
-        if (diff > m_period)
+        if (diff > configuration.getTemperatureReportInterval())
         {
             m_period_timestamp = t;
             m_sensorsState = SENSORS_STATE_TRIGGER;
         }
         break;
     }
-}
-
-void Temperature::setMeasurePeriod(uint32_t period_ms)
-{
-    m_period = period_ms;
 }
 
 void Temperature::setOnTemperatureReady(const std::function<void(String&, float)> &newOnTemperatureReady)
