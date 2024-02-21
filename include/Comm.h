@@ -12,7 +12,7 @@ public:
   void setBattery(Battery *battery);
   bool publish_measure_data(const String &type, const String &sensor, const float value);
   bool publish_measure_data(const String &type, const String &sensor, DynamicJsonDocument &jsonDocument);
-  bool publish_debug_data(const String &message);
+  void publish_debug_data(const String &message);
   String get_time(void);
   String &getDeviceId();
 

@@ -26,14 +26,14 @@ void Gps::loop()
             {
                 GpsData gpsData(raw_gps);
 
-                if (!updateRequired(gpsData.m_latitude, gpsData.m_longitude))
-                {
-                    Serial.println("Update not required");
-                }
-                else
-                {
+                // if (!updateRequired(gpsData.m_latitude, gpsData.m_longitude))
+                // {
+                //     Serial.println("Update not required");
+                // }
+                // else
+                // {
                     m_onGpsDataReady(gpsData);
-                }
+                // }
             }
         }
     }

@@ -29,7 +29,7 @@ private:
     uint32_t m_last_gps_try;
     uint32_t m_last_gps_shot;
     uint32_t m_min_distance = 20;
-    uint32_t m_max_time = 10 * 60 * 1000;
+    uint32_t m_max_time = 1 * 60 * 1000;
     double m_last_latitude = 999.0;
     double m_last_longitude = 999.0;
 

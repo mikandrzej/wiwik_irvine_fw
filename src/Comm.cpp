@@ -8,6 +8,10 @@
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
 #include <TinyGPSPlus.h>
+#include <ArduinoHttpClient.h>
+
+#include <Update.h>
+#include <StreamString.h>
 
 #include "Configuration.h"
 
@@ -20,9 +24,17 @@
 #define RESET 5
 #define BAT_EN 12
 
+extern uint32_t software_version;
+
 EgTinyGsm modem(SerialAT);
-TinyGsmClient client(modem);
+TinyGsmClient client(modem, 0);
+TinyGsmClient client2(modem, 1);
 PubSubClient mqtt(client);
+
+const char server[] = "cloud.2canit.pl";
+const char resource[] = "/firmware.bin";
+const int port = 80;
+static HttpClient http(client2, server, port);
 
 TinyGPSPlus gps;
 
@@ -133,12 +145,12 @@ void Comm::state_modem_power_off()
 {
   if (true == requested_power_on)
   {
-    if (m_battery->getBatteryVoltage() > (m_battery_on_voltage + m_battery_treshold_voltage))
-    {
-      change_state(MODEM_POWER_DOWN);
+    // if (m_battery->getBatteryVoltage() > (m_battery_on_voltage + m_battery_treshold_voltage))
+    // {
+    change_state(MODEM_POWER_DOWN);
 
-      Serial.println("Modem power down");
-    }
+    Serial.println("Modem power down");
+    // }
   }
 }
 
@@ -409,7 +421,7 @@ void Comm::state_modem_power_on()
       m_lastNetworkShot = millis();
       String sensor_id = comm.getDeviceId() + "_network";
       DynamicJsonDocument doc(200);
-      
+
       doc["op"] = modem.getOperator();
       doc["signal"] = modem.getSignalQuality();
       doc["mode"] = modem.getNetworkMode();
@@ -564,7 +576,7 @@ bool Comm::publish_measure_data(const String &type, const String &sensor, Dynami
   return true;
 }
 
-bool Comm::publish_debug_data(const String &message)
+void Comm::publish_debug_data(const String &message)
 {
   mqtt.publish(build_measure_topic("debug", m_deviceId + "_debug").c_str(), message.c_str());
 }
@@ -684,6 +696,109 @@ void Comm::mqtt_service_callback(const String &type, const String &payload)
     delay(10000);
 
     ESP.restart();
+  }
+  else if (type == "update")
+  {
+    DynamicJsonDocument jsonDocument(200);
+    DeserializationError err = deserializeJson(jsonDocument, payload.c_str());
+
+    if (jsonDocument.containsKey("sw_ver"))
+    {
+      uint32_t remote_sw_version = jsonDocument["sw_ver"].as<uint32_t>();
+      if (remote_sw_version > software_version)
+      {
+        Serial.println("Performing software update");
+        if (jsonDocument.containsKey("sw_server") && jsonDocument.containsKey("sw_port") && jsonDocument.containsKey("sw_path"))
+        {
+          String sw_server = String((const char *)jsonDocument["sw_server"]);
+          uint16_t sw_port = jsonDocument["sw_port"].as<uint16_t>();
+          String sw_path = String((const char *)jsonDocument["sw_path"]);
+
+          Serial.print("Software URL: ");
+          Serial.println((sw_server + ":" + String(sw_port) + sw_path).c_str());
+          mqtt.publish(build_topic("service/update_response").c_str(), "Update started");
+
+          http.connect(sw_server.c_str(), sw_port);
+          int err = http.get(sw_path);
+          if (err == 0)
+          {
+            int status = http.responseStatusCode();
+            if (status == 200)
+            {
+              int length = http.contentLength();
+              Serial.printf("Content length: %d\r\n", length);
+              if (length > 0)
+              {
+                int _lastError = 0;
+                StreamString error;
+                if (!Update.begin(length, U_FLASH))
+                {
+                  _lastError = Update.getError();
+                  Update.printError(error);
+                  error.trim(); // remove line ending
+                  mqtt.publish(build_topic("service/update_response").c_str(), ("Update error: " + error).c_str());
+                }
+
+                // if (md5.length())
+                // {
+                //   if (!Update.setMD5(md5.c_str()))
+                //   {
+                //     _lastError = HTTP_UE_SERVER_FAULTY_MD5;
+                //     DEBUG_HTTP_UPDATE("[httpUpdate] Update.setMD5 failed! (%s)\n", md5.c_str());
+                //     return false;
+                //   }
+                // }
+
+                else if (Update.writeStream(http) != length)
+                {
+                  _lastError = Update.getError();
+                  Update.printError(error);
+                  error.trim(); // remove line ending
+                  mqtt.publish(build_topic("service/update_response").c_str(), ("Update error: " + error).c_str());
+                }
+                else if (!Update.end())
+                {
+                  _lastError = Update.getError();
+                  Update.printError(error);
+                  error.trim(); // remove line ending
+                  mqtt.publish(build_topic("service/update_response").c_str(), ("Update error: " + error).c_str());
+                }
+                else
+                {
+                  mqtt.publish(build_topic("service/update_response").c_str(), "Update succeed. Send reboot command");
+                }
+              }
+              else
+              {
+                Serial.printf("Invalid update data length: %d\r\n", length);
+                mqtt.publish(build_topic("service/update_response").c_str(), ("HTTP data length invalid: " + String(length)).c_str());
+              }
+            }
+            else
+            {
+              Serial.printf("Http request status code: %d\r\n", status);
+              mqtt.publish(build_topic("service/update_response").c_str(), ("HTTP request status code: " + String(status)).c_str());
+            }
+          }
+          else
+          {
+            Serial.printf("Http request error code: %d\r\n", err);
+            mqtt.publish(build_topic("service/update_response").c_str(), ("HTTP request error code: " + String(err)).c_str());
+          }
+        }
+        else
+        {
+          Serial.println("Abort sw update, no url");
+          mqtt.publish(build_topic("service/update_response").c_str(), "Update error - json should contain sw_server, sw_port, sw_path keys");
+        }
+      }
+      else
+      {
+        Serial.println("Performing software update");
+        String sw_ver = String(software_version);
+        mqtt.publish(build_topic("service/update_response").c_str(), ("Update not expected. Installed version: " + sw_ver).c_str());
+      }
+    }
   }
 }
 
