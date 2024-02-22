@@ -33,6 +33,7 @@ void Configuration::printConfig()
     Serial.printf("Temperature report interval: %u\r\n", m_currentConfig.temperature_report_interval);
     Serial.printf("GPS report interval: %u\r\n", m_currentConfig.gps_report_interval);
     Serial.printf("Battery report interval: %u\r\n", m_currentConfig.battery_report_interval);
+    Serial.printf("Jaale sensor address: %s\r\n", m_currentConfig.jaale_sensor_address);
 }
 
 void Configuration::readConfig()
@@ -121,6 +122,13 @@ uint32_t Configuration::getNetworkReportInterval()
     if (m_configReady)
         return m_currentConfig.network_report_interval;
     return 0;
+}
+
+String Configuration::getJaaleSensorAddress()
+{
+    if (m_configReady)
+        return String(m_currentConfig.jaale_sensor_address);
+    return String();
 }
 
 uint8_t Configuration::getDebugMode()
@@ -243,6 +251,20 @@ void Configuration::setNetworkReportInterval(const uint32_t interval)
     m_configChanged = true;
 }
 
+void Configuration::setJaaleSensorAddress(String &address)
+{
+    if (address.length() < sizeof(m_currentConfig.jaale_sensor_address))
+    {
+        memset(m_currentConfig.jaale_sensor_address,
+               0,
+               sizeof(m_currentConfig.jaale_sensor_address));
+        memcpy(m_currentConfig.jaale_sensor_address,
+               address.c_str(),
+               sizeof(m_currentConfig.jaale_sensor_address));
+        m_configChanged = true;
+    }
+}
+
 void Configuration::setDebugMode(const uint8_t mode)
 {
     m_currentConfig.debug_mode = mode;
@@ -272,6 +294,7 @@ void Configuration::defaultConfig()
     m_currentConfig.gps_report_interval = 10000u;
     m_currentConfig.network_report_interval = 10000u;
     m_currentConfig.debug_mode = 0u;
+    sprintf(m_currentConfig.jaale_sensor_address, "de:96:36:e9:fc:09");
 
     Serial.println("Saving default configuration");
 

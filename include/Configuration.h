@@ -12,6 +12,7 @@ typedef struct
     uint32_t temperature_report_interval;
     uint32_t battery_report_interval;
     uint32_t network_report_interval;
+    char jaale_sensor_address[18u];
     uint8_t debug_mode;
 
     uint32_t crc;
@@ -35,6 +36,7 @@ public:
     uint32_t getTemperatureReportInterval();
     uint32_t getBatteryReportInterval();
     uint32_t getNetworkReportInterval();
+    String getJaaleSensorAddress();
     uint8_t getDebugMode();
 
     void setMqttServerAddress(String &address);
@@ -45,6 +47,7 @@ public:
     void setTemperatureReportInterval(const uint32_t interval);
     void setBatteryReportInterval(const uint32_t interval);
     void setNetworkReportInterval(const uint32_t interval);
+    void setJaaleSensorAddress(String &address);
     void setDebugMode(const uint8_t mode);
 
 private:

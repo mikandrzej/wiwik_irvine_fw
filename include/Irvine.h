@@ -6,6 +6,7 @@
 #include "Battery.h"
 #include "Comm.h"
 #include "Gps.h"
+#include "BLEJaaleTemperature.h"
 
 class Irvine
 {
@@ -34,6 +35,7 @@ public:
     Temperature m_temperature;
     Battery m_battery;
     Gps m_gps;
+    BleJaaleeTemperature m_jaaleTemp;
 
     const float m_battery_treshold = 2900.0f;
 

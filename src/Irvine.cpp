@@ -1,7 +1,8 @@
 #include "Irvine.h"
+#include "Configuration.h"
+#include "BLEJaaleTemperature.h"
 
 #include <Wire.h>
-
 
 void Irvine::loop()
 {
@@ -14,6 +15,8 @@ void Irvine::loop()
         m_battery.loop();
 
         m_gps.loop();
+
+        m_jaaleTemp.loop();
     }
 }
 
@@ -68,6 +71,13 @@ boolean Irvine::temperatureInit()
             this->onTemperatureReady(sensorAddress, temperature);
         });
 
+    m_jaaleTemp.setAddress(configuration.getJaaleSensorAddress());
+    String jaaleAddress = String("jaale_") + configuration.getJaaleSensorAddress();
+    m_jaaleTemp.setTemperatureCallback(
+        [this](String &sensorAddress, float temperature)
+        {
+            this->onTemperatureReady(sensorAddress, temperature);
+        });
     return true;
 }
 
