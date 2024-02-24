@@ -165,7 +165,8 @@ GpsData::GpsData(String &raw)
     m_timestamp = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second + " GMT+0";
 
     m_altitude = getNextSubstring(raw, ',', &iterator).toDouble();
-    m_speed = getNextSubstring(raw, ',', &iterator).toDouble();
+    double speed_knots = getNextSubstring(raw, ',', &iterator).toDouble();
+    m_speed = speed_knots * 1.852000;
 
     (void)getNextSubstring(raw, ',', &iterator);
     (void)getNextSubstring(raw, ',', &iterator);
