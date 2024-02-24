@@ -137,7 +137,7 @@ bool BleJaaleeTemperature::parseValue(const uint8_t *raw, uint8_t len)
     }
     if (parsed > 0u)
     {
-        double temperature = 175.72 * ((double)parsed / 65536.0) - 46.85;
+        double temperature = 175.0 * ((double)parsed / 65535.0) - 45.0;
         Serial.printf("BLE Jaale Temperature received: %.2f\r\n", temperature);
         if (this->temperatiure_callback)
         {
