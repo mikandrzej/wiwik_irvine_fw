@@ -295,18 +295,22 @@ void Comm::state_modem_init_wait_for_network()
 
 void Comm::state_modem_init_apn()
 {
-  if (modem.gprsConnect(m_apn, m_apnUsername, m_apnPassword))
+  if (modem.isNetworkConnected())
   {
-    if (modem.isGprsConnected())
+    if (modem.gprsConnect(m_apn, m_apnUsername, m_apnPassword))
     {
-      Serial.println("GPRS Connected");
-      change_state(MODEM_INIT_GPS);
-      return;
+      if (modem.isGprsConnected())
+      {
+        Serial.println("GPRS Connected");
+        change_state(MODEM_INIT_GPS);
+      }
     }
   }
-
-  Serial.println("GPRS init fail - reset");
-  change_state(MODEM_INIT_FAIL_DELAY);
+  else
+  {
+    Serial.println("Network lost during GPRS connecting");
+    change_state(MODEM_INIT_WAIT_FOR_NETWORK);
+  }
 }
 
 void Comm::state_modem_init_gps()
@@ -367,35 +371,39 @@ void Comm::state_modem_init_wait_for_mqtt()
   static String pass = configuration.getMqttServerPassword();
 
   bool result;
-  if (login.length() > 0)
+
+  if (modem.isGprsConnected())
   {
-    Serial.printf("Connecting to MQTT: %s / %s\r\n", login.c_str(), pass.c_str());
-    result = mqtt.connect(m_deviceId.c_str(),
-                          login.c_str(),
-                          pass.c_str());
+    if (login.length() > 0)
+    {
+      Serial.printf("Connecting to MQTT: %s / %s\r\n", login.c_str(), pass.c_str());
+      result = mqtt.connect(m_deviceId.c_str(),
+                            login.c_str(),
+                            pass.c_str());
+    }
+    else
+    {
+      Serial.printf("Connecting to MQTT without login\r\n");
+      result = mqtt.connect(m_deviceId.c_str());
+    }
+    if (result)
+    {
+      Serial.println("MQTT Connected - sending hello message");
+
+      mqtt.setCallback([this](char *topic, uint8_t *payload, unsigned int len)
+                       { this->mqtt_callback(String(topic), String(payload, len)); });
+      static String subscribed_topic = build_topic("service/to_device/#");
+      mqtt.subscribe(subscribed_topic.c_str());
+
+      publish_init_message();
+
+      change_state(MODEM_POWER_ON);
+    }
   }
   else
   {
-    Serial.printf("Connecting to MQTT without login\r\n");
-    result = mqtt.connect(m_deviceId.c_str());
-  }
-  if (result)
-  {
-    Serial.println("MQTT Connected - sending hello message");
-
-    mqtt.setCallback([this](char *topic, uint8_t *payload, unsigned int len)
-                     { this->mqtt_callback(String(topic), String(payload, len)); });
-    static String subscribed_topic = build_topic("service/#");
-    mqtt.subscribe(subscribed_topic.c_str());
-
-    publish_init_message();
-
-    change_state(MODEM_POWER_ON);
-  }
-  else
-  {
-    Serial.println("MQTT init fail - reset");
-    change_state(MODEM_INIT_FAIL_DELAY);
+    Serial.println("GPRS disconnected during MQTT connecting");
+    change_state(MODEM_INIT_APN);
   }
 }
 
@@ -475,7 +483,6 @@ void Comm::publish_init_message()
 
   String sensor = m_deviceId + "_modem";
   String topic = build_measure_topic("service", sensor);
-  Serial.println("send data" + String(buf, len) + "to topic: " + topic);
   mqtt.publish(topic.c_str(), buf, len);
 }
 
@@ -611,7 +618,7 @@ String &Comm::getDeviceId()
 void Comm::mqtt_callback(const String &topic, const String &message)
 {
   Serial.println("Rcv mqtt data: " + topic + ": " + message);
-  String service_topic = build_topic("service");
+  String service_topic = build_topic("service/to_device");
   if (topic.startsWith(service_topic))
   {
     String type = topic.substring(service_topic.length() + 1);
@@ -679,6 +686,12 @@ void Comm::mqtt_service_callback(const String &type, const String &payload)
         uint8_t mode = jsonDocument["debug_mode"].as<uint8_t>();
         Serial.printf("Setting debug_mode to: %u\r\n", mode);
         configuration.setDebugMode(mode);
+      }
+      if (jsonDocument.containsKey("jaalee_address"))
+      {
+        String jaalee_address((const char *)jsonDocument["jaalee_address"]);
+        Serial.printf("Setting jaalee_address to: %s\r\n", jaalee_address.c_str());
+        configuration.setJaaleSensorAddress(jaalee_address);
       }
       mqtt.publish(build_topic("service/set_config_response").c_str(), "Configuration saved");
     }

@@ -119,7 +119,7 @@ void BleJaaleeTemperature::setAddress(String ble_address)
 {
     this->ble_address = ble_address;
     ble_address.replace(":", "");
-    this->sensor_address = String("jaale_") + ble_address;
+    this->sensor_address = String("jaale_0x") + ble_address;
 }
 
 void BleJaaleeTemperature::setTemperatureCallback(const std::function<void(String &, float)> &newTemperatureCallback)
