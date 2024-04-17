@@ -8,110 +8,53 @@ void BleJaaleeTemperature::loop()
     case BleTemperatureState::NOT_INITIALISED:
         if (BLE.begin())
         {
-            this->state = BleTemperatureState::NOT_CONNECTED;
-            Serial.printf("Going to NOT_CONNECTED state\r\n");
+            this->state = BleTemperatureState::SCANNING_PREPARE;
+            Serial.printf("Going to SCANNING_PREPARE state\r\n");
         }
         else
         {
             Serial.printf("BLE init error\r\n");
         }
         break;
-    case BleTemperatureState::NOT_CONNECTED:
+
+    case BleTemperatureState::SCANNING_PREPARE:
         BLE.scanForAddress(this->ble_address);
+        m_period_timestamp = millis();
         this->state = BleTemperatureState::SCANNING;
         Serial.printf("Going to SCANNING state\r\n");
         break;
+
     case BleTemperatureState::SCANNING:
-        this->device = BLE.available();
-        if (this->device)
+    {
+        BLEDevice peripheral = BLE.available();
+        if (peripheral)
         {
+            uint8_t man_data[128];
+            int man_data_len = peripheral.manufacturerData(man_data, 128);
+            if (man_data_len == 26)
+            {
+                this->parseValue(&man_data[20u], 2);
+            }
             BLE.stopScan();
-            this->state = BleTemperatureState::CONNECTING;
-            Serial.printf("Going to CONNECTING state\r\n");
+            this->state = BleTemperatureState::SCANNING_DELAY;
+            Serial.printf("Going to SCANNING_DELAY state\r\n");
         }
         break;
-    case BleTemperatureState::CONNECTING:
-        if (this->device.connect())
+    }
+
+    case BleTemperatureState::SCANNING_DELAY:
+    {
+
+        uint32_t t = millis();
+        uint32_t diff = t - this->m_period_timestamp;
+        if (diff > configuration.getTemperatureReportInterval())
         {
-            this->state = BleTemperatureState::ATTRIBUTE_SCAN;
-            Serial.printf("Going to ATTRIBUTE_SCAN state\r\n");
-        }
-        break;
-    case BleTemperatureState::ATTRIBUTE_SCAN:
-        if (!this->device.connected())
-        {
-            this->state = BleTemperatureState::NOT_CONNECTED;
-            Serial.printf("Going to NOT_CONNECTED state\r\n");
-        }
-        else if (!this->device.discoverAttributes())
-        {
-            this->state = BleTemperatureState::NOT_CONNECTED;
-            Serial.printf("Going to NOT_CONNECTED state\r\n");
-        }
-        else
-        {
-            this->state = BleTemperatureState::SERVICE_SCAN;
-            Serial.printf("Going to SERVICE_SCAN state\r\n");
+            this->state = BleTemperatureState::SCANNING_PREPARE;
+            Serial.printf("Going to SCANNING_PREPARE state\r\n");
         }
 
-    case BleTemperatureState::SERVICE_SCAN:
-        if (!this->device.connected())
-        {
-            this->state = BleTemperatureState::NOT_CONNECTED;
-            Serial.printf("Going to NOT_CONNECTED state\r\n");
-        }
-        else if (!this->device.hasService(this->service_uuid.c_str()))
-        {
-            this->state = BleTemperatureState::ATTRIBUTE_SCAN;
-            Serial.printf("Going to ATTRIBUTE_SCAN state\r\n");
-        }
-        else
-        {
-            this->service = this->device.service(this->service_uuid.c_str());
-            this->state = BleTemperatureState::CHARACTERISTIC_SCAN;
-            Serial.printf("Going to CHARACTERISTIC_SCAN state\r\n");
-        }
         break;
-    case BleTemperatureState::CHARACTERISTIC_SCAN:
-        if (!this->device.connected())
-        {
-            this->state = BleTemperatureState::NOT_CONNECTED;
-            Serial.printf("Going to NOT_CONNECTED state\r\n");
-        }
-        else if (!this->service.hasCharacteristic(this->characteristic_uuid.c_str()))
-        {
-            this->state = BleTemperatureState::NOT_CONNECTED;
-            Serial.printf("Going to NOT_CONNECTED state\r\n");
-        }
-        else
-        {
-            this->characteristic = this->service.characteristic(this->characteristic_uuid.c_str());
-            this->state = BleTemperatureState::CONNECTED;
-            Serial.printf("Going to CONNECTED state\r\n");
-        }
-        break;
-    case BleTemperatureState::CONNECTED:
-        if (!this->device.connected())
-        {
-            this->state = BleTemperatureState::NOT_CONNECTED;
-            Serial.printf("Going to NOT_CONNECTED state\r\n");
-        }
-        else
-        {
-            uint32_t t = millis();
-            uint32_t diff = t - this->m_period_timestamp;
-            if (diff > configuration.getTemperatureReportInterval())
-            {
-                if (this->characteristic.read() && this->characteristic.valueLength() > 0)
-                {
-                    if (this->parseValue(this->characteristic.value(), this->characteristic.valueLength()))
-                    {
-                        m_period_timestamp = millis();
-                    }
-                }
-            }
-        }
-        break;
+    }
     }
 }
 

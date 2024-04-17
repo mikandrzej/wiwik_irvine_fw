@@ -704,9 +704,9 @@ void Comm::mqtt_service_callback(const String &type, const String &payload)
   else if (type == "reboot")
   {
     Serial.println("Reboot in 10 seconds");
-    mqtt.publish(build_topic("service/reboot_response").c_str(), "Reboot in 10 seconds");
+    mqtt.publish(build_topic("service/reboot_response").c_str(), "Reboot in 3 seconds");
 
-    delay(10000);
+    delay(3000);
 
     ESP.restart();
   }

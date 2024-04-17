@@ -2,19 +2,19 @@
 
 #include <Arduino.h>
 #include <ArduinoBLE.h>
+#include <vector>
+
+constexpr int MAX_DISCOVERED_DEVICES = 50;
+constexpr int DISCOVERY_TIMEOUT = 10000;
 
 using bleTemperatureCallback = void(String, float &);
 
 enum class BleTemperatureState
 {
     NOT_INITIALISED,
-    NOT_CONNECTED,
+    SCANNING_PREPARE,
     SCANNING,
-    CONNECTING,
-    ATTRIBUTE_SCAN,
-    SERVICE_SCAN,
-    CHARACTERISTIC_SCAN,
-    CONNECTED
+    SCANNING_DELAY,
 };
 
 class BleJaaleeTemperature
@@ -28,16 +28,8 @@ private:
     bool parseValue(const uint8_t *raw, uint8_t len);
 
     String ble_address = "";
-    const String device_name = "JAALEE";
-    const String service_uuid = "ffb0";
-    const String characteristic_uuid = "ffb1";
-    const String descriptor_uuid = "";
     String sensor_address = "";
     uint32_t m_period_timestamp;
-
-    BLEDevice device;
-    BLEService service;
-    BLECharacteristic characteristic;
 
     std::function<void(String &, float)> temperatiure_callback = nullptr;
     BleTemperatureState state = BleTemperatureState::NOT_INITIALISED;
