@@ -8,11 +8,6 @@
 
 #include <Preferences.h>
 
-#define BOARD_MISO_PIN (2)
-#define BOARD_MOSI_PIN (15)
-#define BOARD_SCK_PIN (14)
-#define BOARD_SD_CS_PIN (13)
-
 #define EEPROM_SIZE sizeof(eeprom_data_s)
 
 Preferences prefs;

@@ -286,7 +286,7 @@ void Comm::state_modem_init_wait_for_network()
 
     change_state(MODEM_INIT_APN);
   }
-  else if (millis() - m_sm_timestamp > 10000)
+  else if (millis() - m_sm_timestamp > 120000)
   {
     Serial.println("Network not found - reset");
     change_state(MODEM_INIT_FAIL_DELAY);

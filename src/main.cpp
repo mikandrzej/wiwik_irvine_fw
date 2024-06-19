@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <WiFi.h>
+#include <SPI.h>
 
 #include "Irvine.h"
 #include "Configuration.h"
@@ -9,6 +10,10 @@
 
 #include <Update.h>
 #define TIMER0_INTERVAL_MS 1000
+
+#define BOARD_MISO_PIN (2)
+#define BOARD_MOSI_PIN (15)
+#define BOARD_SCK_PIN (14)
 
 Irvine irvine;
 
@@ -28,6 +33,7 @@ TaskHandle_t xBleTaskHandle = NULL;
 
 void setup()
 {
+  SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(115200);
 
   pinMode(21, OUTPUT); // 1wire
