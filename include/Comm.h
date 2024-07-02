@@ -22,7 +22,6 @@ public:
     MODEM_UNINITIALIZED,
     MODEM_POWER_OFF,
     MODEM_POWER_DOWN,
-    MODEM_BAT_EN,
     MODEM_RESET,
     MODEM_POWER_UP,
     MODEM_POWER_UP_DELAY,
@@ -41,7 +40,6 @@ public:
   void state_modem_uninitialized();
   void state_modem_power_off();
   void state_modem_power_down();
-  void state_modem_bat_en();
   void state_modem_reset();
   void state_modem_power_up();
   void state_modem_power_up_delay();

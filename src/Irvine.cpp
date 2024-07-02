@@ -12,8 +12,6 @@ void Irvine::loop()
     {
         comm.loop();
 
-        m_temperature.loop();
-
         m_battery.loop();
 
         m_gps.loop();
@@ -34,16 +32,6 @@ boolean Irvine::initSm()
 
     switch (m_initState)
     {
-    case INIT_STATE_TEMPERATURE_INIT:
-        if (temperatureInit())
-        {
-            m_initState = INIT_STATE_BATTERY_INIT;
-        }
-        else
-        {
-            m_initState = INIT_STATE_TEMPERATURE_INIT;
-        }
-        break;
     case INIT_STATE_BATTERY_INIT:
         if (batteryInit())
         {
@@ -51,7 +39,7 @@ boolean Irvine::initSm()
         }
         else
         {
-            m_initState = INIT_STATE_TEMPERATURE_INIT;
+            m_initState = INIT_STATE_BATTERY_INIT;
         }
         break;
     case INIT_STATE_GPS_INIT:
@@ -61,7 +49,7 @@ boolean Irvine::initSm()
         }
         else
         {
-            m_initState = INIT_STATE_TEMPERATURE_INIT;
+            m_initState = INIT_STATE_BATTERY_INIT;
         }
         break;
     case INIT_STATE_DONE:
@@ -69,18 +57,6 @@ boolean Irvine::initSm()
     }
 
     return false;
-}
-
-boolean Irvine::temperatureInit()
-{
-    m_temperature.setup();
-    m_temperature.setOnTemperatureReady(
-        [this](String &sensorAddress, float temperature)
-        {
-            this->onTemperatureReady(sensorAddress, temperature);
-        });
-
-    return true;
 }
 
 boolean Irvine::batteryInit()

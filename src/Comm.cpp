@@ -17,12 +17,11 @@
 
 #define SerialAT Serial1
 #define UART_BAUD 115200
-#define PIN_TX 26
-#define PIN_RX 27
+#define PIN_TX 19
+#define PIN_RX 18
 
-#define PWR_PIN 4
-#define RESET 5
-#define BAT_EN 12
+#define PWR_PIN 21
+#define RESET 16
 
 extern uint32_t software_version;
 
@@ -70,9 +69,6 @@ void Comm::loop()
     break;
   case MODEM_POWER_DOWN:
     state_modem_power_down();
-    break;
-  case MODEM_BAT_EN:
-    state_modem_bat_en();
     break;
   case MODEM_RESET:
     state_modem_reset();
@@ -123,11 +119,9 @@ void Comm::state_modem_uninitialized()
 
   SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
 
-  pinMode(BAT_EN, OUTPUT);
   pinMode(RESET, OUTPUT);
   pinMode(PWR_PIN, OUTPUT);
 
-  digitalWrite(BAT_EN, LOW);
   digitalWrite(RESET, LOW);
   digitalWrite(PWR_PIN, HIGH);
 
@@ -156,25 +150,12 @@ void Comm::state_modem_power_off()
 
 void Comm::state_modem_power_down()
 {
-  digitalWrite(BAT_EN, LOW);
   digitalWrite(RESET, HIGH);
   digitalWrite(PWR_PIN, HIGH);
 
-  change_state(MODEM_BAT_EN);
+  change_state(MODEM_RESET);
 
   Serial.println("Modem bat enable");
-}
-
-void Comm::state_modem_bat_en()
-{
-  if (millis() - m_sm_timestamp > 1000)
-  {
-    /* Enable modem power supply */
-    digitalWrite(BAT_EN, HIGH);
-
-    change_state(MODEM_RESET);
-    Serial.println("Modem reset");
-  }
 }
 
 void Comm::state_modem_reset()
@@ -203,7 +184,7 @@ void Comm::state_modem_power_up()
 
 void Comm::state_modem_power_up_delay()
 {
-  if (millis() - m_sm_timestamp > 10000)
+  if (millis() - m_sm_timestamp > 20000)
   {
     change_state(MODEM_INIT);
     Serial.println("Modem init");
@@ -500,9 +481,6 @@ void Comm::change_state(state_e new_state)
 {
   switch (new_state)
   {
-  case MODEM_BAT_EN:
-    m_sm_timestamp = millis();
-    break;
   case MODEM_RESET:
     m_sm_timestamp = millis();
     break;

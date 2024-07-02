@@ -11,9 +11,10 @@
 #include <Update.h>
 #define TIMER0_INTERVAL_MS 1000
 
-#define BOARD_MISO_PIN (2)
-#define BOARD_MOSI_PIN (15)
-#define BOARD_SCK_PIN (14)
+#define BOARD_MISO_PIN (15)
+#define BOARD_MOSI_PIN (13)
+#define BOARD_SCK_PIN (2)
+#define BOARD_CS_PIN (32)
 
 Irvine irvine;
 
@@ -36,8 +37,6 @@ void setup()
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(115200);
 
-  pinMode(21, OUTPUT); // 1wire
-  pinMode(22, OUTPUT);
 
   xBleQueue = xQueueCreateStatic(BLE_QUEUE_LENGTH,
                                  BLE_QUEUE_ITEM_SIZE,

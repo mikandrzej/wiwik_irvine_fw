@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-#include "Temperature.h"
 #include "Battery.h"
 #include "Comm.h"
 #include "Gps.h"
@@ -26,20 +25,17 @@ public:
 
     enum
     {
-        INIT_STATE_TEMPERATURE_INIT,
         INIT_STATE_BATTERY_INIT,
         INIT_STATE_GPS_INIT,
         INIT_STATE_DONE
     } m_initState;
 
-    Temperature m_temperature;
     Battery m_battery;
     Gps m_gps;
 
     const float m_battery_treshold = 2900.0f;
 
     boolean initSm();
-    boolean temperatureInit();
     boolean batteryInit();
     boolean gpsInit();
 
