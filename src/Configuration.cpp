@@ -3,18 +3,14 @@
 #include <SPI.h>
 #include "File.h"
 #include "Configuration.h"
-#include <EEPROM.h>
 #include <esp_crc.h>
 
 #include <Preferences.h>
-
-#define EEPROM_SIZE sizeof(eeprom_data_s)
 
 Preferences prefs;
 
 void Configuration::initSource()
 {
-    // EEPROM.begin(EEPROM_SIZE);
     prefs.begin("configuration"); // namespace
 }
 
@@ -38,8 +34,6 @@ void Configuration::readConfig()
     int retries = 3;
     do
     {
-        // EEPROM.readBytes(0u, &m_currentConfig, sizeof(m_currentConfig));
-
         prefs.getBytes("configuration", &m_currentConfig, sizeof(m_currentConfig));
         uint32_t crc = calculateCrc();
         if (crc == m_currentConfig.crc)
@@ -135,11 +129,10 @@ uint8_t Configuration::getDebugMode()
 
 bool Configuration::saveConfig()
 {
-
     int retries = 3;
     do
     {
-        eeprom_data_s temp_config;
+        config_data_s temp_config;
         prefs.getBytes("configuration", &temp_config, sizeof(temp_config));
         if (0 == memcmp(&temp_config, &m_currentConfig, sizeof(temp_config)))
         {
@@ -203,7 +196,7 @@ void Configuration::setMqttServerLogin(String &login)
                sizeof(m_currentConfig.mqtt_server_login));
         memcpy(m_currentConfig.mqtt_server_login,
                login.c_str(),
-               sizeof(m_currentConfig.mqtt_server_login));
+               login.length());
         m_configChanged = true;
     }
 }
@@ -217,7 +210,7 @@ void Configuration::setMqttServerPassword(String &password)
                sizeof(m_currentConfig.mqtt_server_password));
         memcpy(m_currentConfig.mqtt_server_password,
                password.c_str(),
-               sizeof(m_currentConfig.mqtt_server_password));
+               password.length());
         m_configChanged = true;
     }
 }

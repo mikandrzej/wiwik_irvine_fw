@@ -310,7 +310,7 @@ void Comm::state_modem_init_gps()
     {
       break;
     }
-    if (modem.waitResponse(10000UL, "+CGNSSPWR: READY!") != 1)
+    if (modem.waitResponse(20000UL, "+CGNSSPWR: READY!") != 1)
     {
       break;
     }
@@ -639,7 +639,7 @@ void Comm::mqtt_service_callback(const String &type, const String &payload)
       {
         String mqtt_password((const char *)jsonDocument["mqtt_server_password"]);
         Serial.printf("Setting mqtt_server_password to: %s\r\n", mqtt_password.c_str());
-        configuration.setMqttServerLogin(mqtt_password);
+        configuration.setMqttServerPassword(mqtt_password);
       }
       if (jsonDocument.containsKey("temperature_interval"))
       {

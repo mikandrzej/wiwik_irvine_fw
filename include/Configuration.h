@@ -16,7 +16,7 @@ typedef struct
     uint8_t debug_mode;
 
     uint32_t crc;
-} __attribute__((packed)) eeprom_data_s;
+} __attribute__((packed)) config_data_s;
 
 class Configuration
 {
@@ -55,7 +55,7 @@ private:
     uint32_t calculateCrc();
 
 private:
-    eeprom_data_s m_currentConfig;
+    config_data_s m_currentConfig;
     bool m_configChanged;
     bool m_configReady;
 };
