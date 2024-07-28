@@ -3,6 +3,8 @@
 #include "BLETask.h"
 
 #include <Wire.h>
+#include <memory>
+#include <UdsFuelTankLevelQuery.hpp>
 
 void Irvine::loop()
 {
@@ -15,6 +17,8 @@ void Irvine::loop()
         m_battery.loop();
 
         m_gps.loop();
+
+        m_udsQueryManager.loop(millis());
 
         if (xQueueReceive(xBleQueue, &ble_msg, 0))
         {
@@ -37,19 +41,17 @@ boolean Irvine::initSm()
         {
             m_initState = INIT_STATE_GPS_INIT;
         }
-        else
-        {
-            m_initState = INIT_STATE_BATTERY_INIT;
-        }
         break;
     case INIT_STATE_GPS_INIT:
         if (gpsInit())
         {
-            m_initState = INIT_STATE_DONE;
+            m_initState = INIT_STATE_UDS_INIT;
         }
-        else
+        break;
+    case INIT_STATE_UDS_INIT:
+        if (udsInit())
         {
-            m_initState = INIT_STATE_BATTERY_INIT;
+            m_initState = INIT_STATE_DONE;
         }
         break;
     case INIT_STATE_DONE:
@@ -82,6 +84,15 @@ boolean Irvine::gpsInit()
     return true;
 }
 
+boolean Irvine::udsInit()
+{
+    auto tankLevelQuery = std::make_unique<UdsFuelTankLevelQuery>([this](const float value)
+                                                                  { this->onTankLevel(value); }, 10000);
+
+    m_udsQueryManager.addQuery(std::move(tankLevelQuery));
+    return true;
+}
+
 void Irvine::onTemperatureReady(String &sensorAddress, float temperature)
 {
     Serial.printf("temperature ready for %s: %.2f\n", sensorAddress.c_str(), temperature);
@@ -109,4 +120,10 @@ void Irvine::onGpsDataReady(GpsData &gpsData)
     serializeJson(doc, buf, sizeof(buf));
     Serial.println(buf);
     comm.publish_measure_data("gps", sensor_id, doc);
+}
+
+void Irvine::onTankLevel(const float value)
+{
+    String sensor_id = comm.getDeviceId() + "_fuel";
+    comm.publish_measure_data("fuel", sensor_id, value);
 }

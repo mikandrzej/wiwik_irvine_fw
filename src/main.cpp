@@ -16,6 +16,10 @@
 #define BOARD_SCK_PIN (2)
 #define BOARD_CS_PIN (32)
 
+#define BOARD_CAN_TX_PIN (33)
+#define BOARD_CAN_RX_PIN (25)
+#define BOARD_CAN_SE_PIN (4)
+
 Irvine irvine;
 
 uint32_t software_version = 5u;
@@ -37,11 +41,38 @@ void setup()
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(115200);
 
-
   xBleQueue = xQueueCreateStatic(BLE_QUEUE_LENGTH,
                                  BLE_QUEUE_ITEM_SIZE,
                                  ucQueueStorageArea,
                                  &xStaticQueue);
+
+  pinMode(BOARD_CAN_SE_PIN, OUTPUT);
+  digitalWrite(BOARD_CAN_SE_PIN, LOW);
+
+  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)BOARD_CAN_TX_PIN, (gpio_num_t)BOARD_CAN_RX_PIN, TWAI_MODE_NORMAL);
+  twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
+  twai_filter_config_t f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
+
+  // Install TWAI driver
+  if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK)
+  {
+    printf("TWAI driver installed\n");
+  }
+  else
+  {
+    printf("Failed to install TWAI driver\n");
+    return;
+  }
+  // Start TWAI driver
+  if (twai_start() == ESP_OK)
+  {
+    printf("TWAI Driver started\n");
+  }
+  else
+  {
+    printf("Failed to start TWAI driver\n");
+    return;
+  }
 
   configuration.initSource();
   configuration.readConfig();

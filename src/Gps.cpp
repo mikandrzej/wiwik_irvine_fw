@@ -19,7 +19,7 @@ void Gps::loop()
 
         String raw_gps = modem.getGPSraw();
 
-        if (raw_gps.length() > 20)
+        if (raw_gps.length() > 0)
         {
             Serial.println("Gps data: " + raw_gps);
             if (m_onGpsDataReady)
