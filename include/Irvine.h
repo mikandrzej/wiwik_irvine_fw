@@ -5,7 +5,6 @@
 #include "Battery.h"
 #include "Comm.h"
 #include "Gps.h"
-#include "BLEJaaleTemperature.h"
 #include <DataLogger.h>
 #include "UdsQueryManager.h"
 

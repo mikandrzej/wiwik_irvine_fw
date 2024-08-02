@@ -13,7 +13,7 @@
 #include <Update.h>
 #include <StreamString.h>
 
-#include "Configuration.h"
+#include "IrvineConfiguration.h"
 
 #define SerialAT Serial1
 #define UART_BAUD 115200
@@ -127,8 +127,7 @@ void Comm::state_modem_uninitialized()
 
   String deviceMac = WiFi.macAddress();
   deviceMac.replace(":", "");
-  m_deviceId = "irvine_" + deviceMac;
-  Serial.println("Deviced id: " + m_deviceId);
+  Serial.println("Deviced id: " + String(irvineConfiguration.device.deviceId));
 
   Serial.println("Modem power off");
 
@@ -336,10 +335,12 @@ void Comm::state_modem_init_gps()
 
 void Comm::state_modem_init_mqtt()
 {
-  static String url = configuration.getMqttServerAddress();
-  uint16_t port = configuration.getMqttServerPort();
-  Serial.printf("Setting MQTT server to: %s:%d\r\n", url.c_str(), port);
-  mqtt.setServer(url.c_str(), port);
+  const char *const url = irvineConfiguration.server.mqttHost;
+  uint16_t port = irvineConfiguration.server.mqttPort;
+
+  Serial.printf("Setting MQTT server to: %s:%d\r\n", url, port);
+
+  mqtt.setServer(url, port);
 
   Serial.println("Waiting for MQTT");
 
@@ -348,24 +349,24 @@ void Comm::state_modem_init_mqtt()
 
 void Comm::state_modem_init_wait_for_mqtt()
 {
-  static String login = configuration.getMqttServerLogin();
-  static String pass = configuration.getMqttServerPassword();
+  const char *const login = irvineConfiguration.server.mqttUsername;
+  const char *const pass = irvineConfiguration.server.mqttPassword;
 
   bool result;
 
   if (modem.isGprsConnected())
   {
-    if (login.length() > 0)
+    if (strnlen(login, 1) > 0)
     {
-      Serial.printf("Connecting to MQTT: %s / %s\r\n", login.c_str(), pass.c_str());
-      result = mqtt.connect(m_deviceId.c_str(),
-                            login.c_str(),
-                            pass.c_str());
+      Serial.printf("Connecting to MQTT: %s / %s\r\n", login, pass);
+      result = mqtt.connect(irvineConfiguration.device.deviceId,
+                            login,
+                            pass);
     }
     else
     {
       Serial.printf("Connecting to MQTT without login\r\n");
-      result = mqtt.connect(m_deviceId.c_str());
+      result = mqtt.connect(irvineConfiguration.device.deviceId);
     }
     if (result)
     {
@@ -405,10 +406,10 @@ void Comm::state_modem_power_on()
   else
   {
     mqtt.loop();
-    if (millis() - m_lastNetworkShot > configuration.getNetworkReportInterval())
+    if (millis() - m_lastNetworkShot > irvineConfiguration.modem.reportInterval)
     {
       m_lastNetworkShot = millis();
-      String sensor_id = comm.getDeviceId() + "_network";
+      String sensor_id = String(irvineConfiguration.device.deviceId) + "_network";
       DynamicJsonDocument doc(200);
 
       doc["op"] = modem.getOperator();
@@ -462,19 +463,19 @@ void Comm::publish_init_message()
 
   size_t len = serializeJson(jsonDocument, buf, sizeof(buf));
 
-  String sensor = m_deviceId + "_modem";
+  String sensor = String(irvineConfiguration.device.deviceId) + "_modem";
   String topic = build_measure_topic("service", sensor);
   mqtt.publish(topic.c_str(), buf, len);
 }
 
 String Comm::build_topic(String lower_elements)
 {
-  return "irvine/" + m_deviceId + "/" + lower_elements;
+  return "irvine/" + String(irvineConfiguration.device.deviceId) + "/" + lower_elements;
 }
 
 String Comm::build_measure_topic(const String &sensor_type, const String &sensor_address)
 {
-  return "irvine/" + m_deviceId + "/" + sensor_type + "/" + sensor_address;
+  return "irvine/" + String(irvineConfiguration.device.deviceId) + "/" + sensor_type + "/" + sensor_address;
 }
 
 void Comm::change_state(state_e new_state)
@@ -563,7 +564,7 @@ bool Comm::publish_measure_data(const String &type, const String &sensor, Dynami
 
 void Comm::publish_debug_data(const String &message)
 {
-  mqtt.publish(build_measure_topic("debug", m_deviceId + "_debug").c_str(), message.c_str());
+  mqtt.publish(build_measure_topic("debug", String(irvineConfiguration.device.deviceId) + "_debug").c_str(), message.c_str());
 }
 
 String Comm::get_time(void)
@@ -588,9 +589,9 @@ String Comm::get_time(void)
   return String(buf);
 }
 
-String &Comm::getDeviceId()
+String Comm::getDeviceId()
 {
-  return m_deviceId;
+  return String(irvineConfiguration.device.deviceId);
 }
 
 void Comm::mqtt_callback(const String &topic, const String &message)
@@ -619,57 +620,51 @@ void Comm::mqtt_service_callback(const String &type, const String &payload)
     {
       if (jsonDocument.containsKey("mqtt_server_address"))
       {
-        String mqtt_server((const char *)jsonDocument["mqtt_server_address"]);
-        Serial.printf("Setting mqtt_server_address to: %s\r\n", mqtt_server.c_str());
-        configuration.setMqttServerAddress(mqtt_server);
+        const char *const mqtt_server = jsonDocument["mqtt_server_address"];
+        Serial.printf("Setting mqtt_server_address to: %s\r\n", mqtt_server);
+        irvineConfiguration.server.setMqttHost(mqtt_server);
       }
       if (jsonDocument.containsKey("mqtt_server_port"))
       {
         uint16_t port = jsonDocument["mqtt_server_port"].as<uint16_t>();
         Serial.printf("Setting mqtt_server_port to: %u\r\n", port);
-        configuration.setMqttServerPort(port);
+        irvineConfiguration.server.setMqttPort(port);
       }
       if (jsonDocument.containsKey("mqtt_server_login"))
       {
-        String mqtt_login((const char *)jsonDocument["mqtt_server_login"]);
-        Serial.printf("Setting mqtt_server_login to: %s\r\n", mqtt_login.c_str());
-        configuration.setMqttServerLogin(mqtt_login);
+        const char *const mqtt_login = jsonDocument["mqtt_server_login"];
+        Serial.printf("Setting mqtt_server_login to: %s\r\n", mqtt_login);
+        irvineConfiguration.server.setMqttUsername(mqtt_login);
       }
       if (jsonDocument.containsKey("mqtt_server_password"))
       {
-        String mqtt_password((const char *)jsonDocument["mqtt_server_password"]);
-        Serial.printf("Setting mqtt_server_password to: %s\r\n", mqtt_password.c_str());
-        configuration.setMqttServerPassword(mqtt_password);
+        const char *const mqtt_password = jsonDocument["mqtt_server_password"];
+        Serial.printf("Setting mqtt_server_password to: %s\r\n", mqtt_password);
+        irvineConfiguration.server.setMqttPassword(mqtt_password);
       }
       if (jsonDocument.containsKey("temperature_interval"))
       {
         uint32_t interval = jsonDocument["temperature_interval"].as<uint32_t>();
         Serial.printf("Setting temperature_interval to: %u\r\n", interval);
-        configuration.setTemperatureReportInterval(interval);
+        irvineConfiguration.bluetooth.setMaxInterval(interval);
       }
       if (jsonDocument.containsKey("gps_interval"))
       {
         uint32_t interval = jsonDocument["gps_interval"].as<uint32_t>();
         Serial.printf("Setting gps_interval to: %u\r\n", interval);
-        configuration.setGpsReportInterval(interval);
+        irvineConfiguration.gps.setGpsMaxInterval(interval);
       }
       if (jsonDocument.containsKey("battery_interval"))
       {
         uint32_t interval = jsonDocument["battery_interval"].as<uint32_t>();
         Serial.printf("Setting battery_interval to: %u\r\n", interval);
-        configuration.setBatteryReportInterval(interval);
-      }
-      if (jsonDocument.containsKey("debug_mode"))
-      {
-        uint8_t mode = jsonDocument["debug_mode"].as<uint8_t>();
-        Serial.printf("Setting debug_mode to: %u\r\n", mode);
-        configuration.setDebugMode(mode);
+        irvineConfiguration.device.setBatteryInterval(interval);
       }
       if (jsonDocument.containsKey("jaalee_address"))
       {
-        String jaalee_address((const char *)jsonDocument["jaalee_address"]);
-        Serial.printf("Setting jaalee_address to: %s\r\n", jaalee_address.c_str());
-        configuration.setJaaleSensorAddress(jaalee_address);
+        const char *const jaalee_address = jsonDocument["jaalee_address"];
+        Serial.printf("Setting jaalee_address to: %s\r\n", jaalee_address);
+        irvineConfiguration.bluetooth.setDeviceAddress(jaalee_address);
       }
       mqtt.publish(build_topic("service/set_config_response").c_str(), "Configuration saved");
     }

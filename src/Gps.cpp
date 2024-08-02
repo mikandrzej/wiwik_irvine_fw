@@ -1,6 +1,6 @@
 
 #include "Gps.h"
-#include "Configuration.h"
+#include <IrvineConfiguration.h>
 // #include <cmath>
 
 #define TINY_GSM_MODEM_SIM7600 // A7670's AT instruction is compatible with SIM7600
@@ -13,7 +13,7 @@ void Gps::loop()
     uint32_t diff;
 
     diff = t - m_last_gps_try;
-    if (diff > configuration.getGpsReportInterval())
+    if (diff > irvineConfiguration.gps.maxInterval)
     {
         m_last_gps_try = t;
 
@@ -32,7 +32,7 @@ void Gps::loop()
                 // }
                 // else
                 // {
-                    m_onGpsDataReady(gpsData);
+                m_onGpsDataReady(gpsData);
                 // }
             }
         }

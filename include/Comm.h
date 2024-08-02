@@ -14,7 +14,7 @@ public:
   bool publish_measure_data(const String &type, const String &sensor, DynamicJsonDocument &jsonDocument);
   void publish_debug_data(const String &message);
   String get_time(void);
-  String &getDeviceId();
+  String getDeviceId();
 
 // private:
   enum state_e
@@ -78,12 +78,10 @@ public:
   String m_sim_ccid;
   String m_imsi;
 
-  const char *m_pin = "0000";
+  const char *m_pin = "4967";
   const char *m_apn = "internet";
   const char *m_apnUsername = "internet";
   const char *m_apnPassword = "internet";
-
-  String m_deviceId = "";
 
   bool out_connected = false;
   bool out_powered_up = false;

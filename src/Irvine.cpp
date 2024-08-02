@@ -1,6 +1,4 @@
 #include "Irvine.h"
-#include "Configuration.h"
-#include "BLETask.h"
 
 #include <Wire.h>
 #include <memory>
@@ -8,8 +6,6 @@
 
 void Irvine::loop()
 {
-    ble_que_item_s ble_msg;
-
     if (initSm())
     {
         comm.loop();
@@ -19,15 +15,6 @@ void Irvine::loop()
         m_gps.loop();
 
         m_udsQueryManager.loop(millis());
-
-        if (xQueueReceive(xBleQueue, &ble_msg, 0))
-        {
-            if (ble_msg.type == BLE_QUE_TYPE_TEMPERATURE)
-            {
-                String sensor_address = String(ble_msg.temperature.sensor_address);
-                this->onTemperatureReady(sensor_address, ble_msg.temperature.value);
-            }
-        }
     }
 }
 

@@ -1,5 +1,5 @@
 #include "Comm.h"
-#include "Configuration.h"
+#include "IrvineConfiguration.h"
 #include "Battery.h"
 
 #define BAT_ADC 35
@@ -10,16 +10,16 @@ void Battery::loop()
 {
     uint32_t t = millis();
     uint32_t diff;
-    
+
     diff = t - m_last_battery_shot;
-    if (diff > configuration.getBatteryReportInterval())
+    if (diff > irvineConfiguration.device.batteryInterval)
     {
         m_last_battery_shot = t;
 
         float voltage = getVoltage(BAT_ADC);
 
         Serial.println("Battery voltage: " + String(voltage));
-        if(m_onBatteryVoltageReady)
+        if (m_onBatteryVoltageReady)
         {
             m_onBatteryVoltageReady(voltage);
         }
