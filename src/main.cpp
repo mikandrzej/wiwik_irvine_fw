@@ -3,7 +3,9 @@
 #include <WiFi.h>
 #include <SPI.h>
 
-#include "Irvine.h"
+#include <driver/twai.h>
+
+#include "EgTinyGsm.h"
 #include "ESP32TimerInterrupt.h"
 
 #include <Update.h>
@@ -12,6 +14,9 @@
 #include <Logger.h>
 
 #include <TaskBluetooth.h>
+#include <MqttControllerTask.h>
+#include <Service.h>
+#include <ModemManagement.h>
 
 #define TIMER0_INTERVAL_MS 1000
 
@@ -24,24 +29,36 @@
 #define BOARD_CAN_RX_PIN (25)
 #define BOARD_CAN_SE_PIN (4)
 
-Irvine irvine;
+#define SerialAT Serial1
+#define MODEM_UART_BAUD 115200
+#define MODEM_PIN_TX 19
+#define MODEM_PIN_RX 18
+
+#define CONSOLE_UART_BAUD 115200
+
+EgTinyGsm modem(SerialAT);
 
 uint32_t software_version = 5u;
 
-#define BLE_TASK_STACK_SIZE 5000
+#define BLE_TASK_STACK_SIZE 4096
 StaticTask_t xBleTaskBuffer;
 StackType_t xBleStack[BLE_TASK_STACK_SIZE];
 TaskHandle_t xBleTaskHandle = NULL;
 
+#define MQTT_TASK_STACK_SIZE 8192
+StaticTask_t xMqttTaskBuffer;
+StackType_t xMqttStack[MQTT_TASK_STACK_SIZE];
+TaskHandle_t xMqttTaskHandle = NULL;
+
 void setup()
 {
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
-  Serial.begin(115200);
+  Serial.begin(CONSOLE_UART_BAUD);
   logger.begin(&Serial);
 
-  logger.logPrintF(LogSeverity::INFO, "MAIN", "Application started");
+  SerialAT.begin(MODEM_UART_BAUD, SERIAL_8N1, MODEM_PIN_RX, MODEM_PIN_TX);
 
-  irvineConfiguration.begin();
+  logger.logPrintF(LogSeverity::INFO, "MAIN", "Application started");
 
   pinMode(BOARD_CAN_SE_PIN, OUTPUT);
   digitalWrite(BOARD_CAN_SE_PIN, LOW);
@@ -50,22 +67,12 @@ void setup()
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
   twai_filter_config_t f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
 
-  // Install TWAI driver
-  if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK)
-  {
-    printf("TWAI driver installed\n");
-  }
-  else
+  if (twai_driver_install(&g_config, &t_config, &f_config) != ESP_OK)
   {
     printf("Failed to install TWAI driver\n");
     return;
   }
-  // Start TWAI driver
-  if (twai_start() == ESP_OK)
-  {
-    printf("TWAI Driver started\n");
-  }
-  else
+  if (twai_start() != ESP_OK)
   {
     printf("Failed to start TWAI driver\n");
     return;
@@ -73,8 +80,21 @@ void setup()
 
   Serial.printf("Software version: %u\r\n", software_version);
 
-  /* Create the task without using any dynamic memory allocation. */
+  modemManagement.begin();
+
+  irvineConfiguration.begin();
+  service.begin();
+
   xBleTaskHandle = xTaskCreateStatic(
+      mqttControllerTask,   /* Function that implements the task. */
+      "MQTT",               /* Text name for the task. */
+      MQTT_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+      (void *)1,            /* Parameter passed into the task. */
+      tskIDLE_PRIORITY,     /* Priority at which the task is created. */
+      xMqttStack,           /* Array to use as the task's stack. */
+      &xMqttTaskBuffer);    /* Variable to hold the task's data structure. */
+
+  xMqttTaskHandle = xTaskCreateStatic(
       taskBluetooth,       /* Function that implements the task. */
       "BLE",               /* Text name for the task. */
       BLE_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
@@ -86,5 +106,6 @@ void setup()
 
 void loop()
 {
-  irvine.loop();
+  modemManagement.loop();
+  vTaskDelay(1);
 }

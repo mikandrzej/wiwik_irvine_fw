@@ -17,6 +17,8 @@ struct BluetoothDevice
     BluetoothDeviceType type = BluetoothDeviceType::NONE;
     uint8_t macAddress[6u] = {0u};
     uint32_t maxInterval = 0u;
+    float maxTemperatureChange = 0.0f;
+    float maxHumidityChange = 0.0f;
 };
 
 class BluetoothConfiguration

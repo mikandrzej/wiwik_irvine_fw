@@ -12,7 +12,7 @@
 class FileManager
 {
 public:
-    bool init();
+    bool begin();
     bool createDirectory(String &path);
     File createFile(String &path, const char *mode = "rw");
 

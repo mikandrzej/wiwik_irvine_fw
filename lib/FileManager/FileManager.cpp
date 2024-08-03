@@ -2,7 +2,7 @@
 
 #include <SPI.h>
 
-bool FileManager::init()
+bool FileManager::begin()
 {
     SPI.begin(SD_SCLK_PIN, SD_MISO_PIN, SD_MOSI_PIN);
     if (!SD.begin(SD_CS_PIN, SPI))

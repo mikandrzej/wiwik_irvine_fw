@@ -12,6 +12,9 @@
 #include "esp_gatt_common_api.h"
 #include "esp_gatts_api.h"
 
+#include "AbstractBluetoothBleDevice.h"
+#include "BluetoothJaaleeTempSensor.h"
+
 const char MODULE[] = "TASK_BT";
 static esp_ble_scan_params_t ble_scan_params = {
     .scan_type = BLE_SCAN_TYPE_ACTIVE,
@@ -24,15 +27,23 @@ static esp_ble_scan_params_t ble_scan_params = {
 class TaskBluetooth
 {
 public:
+    void setup();
     void loop();
+    void parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len);
+
+private:
+    std::vector<AbstractBluetoothBleDevice *> devices;
 };
 
 static void esp_gatts_callback(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 
+TaskBluetooth bluetoothTaskData;
+
 void taskBluetooth(void *pvParameters)
 {
-    TaskBluetooth taskData;
+    bluetoothTaskData.setup();
+    // todo move below to setup
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -78,82 +89,44 @@ void taskBluetooth(void *pvParameters)
 
     while (1)
     {
-        taskData.loop();
+        bluetoothTaskData.loop();
         vTaskDelay(1);
     }
 }
 
 static void esp_gatts_callback(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
-    ESP_LOGI(MODULE, "esp_gatts_callback");
     if (event == ESP_GATTS_REG_EVT)
     {
-        ESP_LOGE(MODULE, "reg app failed, app_id %04x, status %d",
-                 param->reg.app_id,
-                 param->reg.status);
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "reg app failed, app_id %04x, status %d",
+                         param->reg.app_id,
+                         param->reg.status);
         return;
     }
-}
-static void print_manufacturer_data(uint8_t *adv_data, uint8_t adv_data_len)
-{
-    uint8_t index = 0;
-    while (index < adv_data_len)
-    {
-        uint8_t length = adv_data[index++];
-        if (length == 0)
-        {
-            break;
-        }
-
-        uint8_t type = adv_data[index];
-        if (type == 0xFF)
-        {
-            char manufacturer_data_str[256] = {0};
-            int offset = 0;
-            for (int i = 0; i < length - 1; i++)
-            {
-                offset += snprintf(manufacturer_data_str + offset, sizeof(manufacturer_data_str) - offset, "%02x ", adv_data[index + 1 + i]);
-            }
-            logger.logPrintF(LogSeverity::INFO, MODULE, "manufacturer data: %s", manufacturer_data_str);
-        }
-
-        index += length;
-    }
-}
-static void print_adv_data(uint8_t *adv_data, uint8_t adv_data_len)
-{
-    char data_str[256] = {0};
-    int offset = 0;
-    for (int i = 0; i < adv_data_len; i++)
-    {
-        offset += snprintf(data_str + offset, sizeof(data_str) - offset, "%02x", adv_data[i]);
-    }
-    logger.logPrintF(LogSeverity::INFO, MODULE, "adv data: %s", data_str);
 }
 
 static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     esp_err_t err;
 
-    ESP_LOGI(MODULE, "esp_gap_callback");
     switch (event)
     {
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
     {
         uint32_t duration = 0; // 0 indicates continuous scanning
         esp_ble_gap_start_scanning(duration);
-        ESP_LOGI(MODULE, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT");
+        logger.logPrintF(LogSeverity::INFO, MODULE, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT");
         break;
     }
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
     {
         if ((err = param->scan_start_cmpl.status) != ESP_BT_STATUS_SUCCESS)
         {
-            ESP_LOGE(MODULE, "Scan start failed: %s", esp_err_to_name(err));
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "Scan start failed: %s", esp_err_to_name(err));
         }
         else
         {
-            ESP_LOGI(MODULE, "Start scanning...");
+            logger.logPrintF(LogSeverity::INFO, MODULE, "Start scanning...");
         }
         break;
     }
@@ -168,24 +141,14 @@ static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_
             {
                 if (!memcmp(irvineConfiguration.bluetooth.devices[k].macAddress, scan_result->scan_rst.bda, 6u))
                 {
-                    logger.logPrintF(LogSeverity::INFO, MODULE, "scan result: %02x:%02x:%02x:%02x:%02x:%02x rssi %d",
-                                     scan_result->scan_rst.bda[0],
-                                     scan_result->scan_rst.bda[1],
-                                     scan_result->scan_rst.bda[2],
-                                     scan_result->scan_rst.bda[3],
-                                     scan_result->scan_rst.bda[4],
-                                     scan_result->scan_rst.bda[5],
-                                     scan_result->scan_rst.rssi);
-                    print_adv_data(scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len);
-                    print_manufacturer_data(scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len);
+                    bluetoothTaskData.parseAdvertisedData(k, scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len);
                 }
             }
-
-            // Print advertised data
 
             break;
         }
         default:
+            logger.logPrintF(LogSeverity::INFO, MODULE, "ble scan result: %d", scan_result->scan_rst.search_evt);
             break;
         }
         break;
@@ -194,11 +157,11 @@ static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_
     {
         if ((err = param->scan_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS)
         {
-            ESP_LOGE(MODULE, "Scan stop failed: %s", esp_err_to_name(err));
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "Scan stop failed: %s", esp_err_to_name(err));
         }
         else
         {
-            ESP_LOGI(MODULE, "Stop scan successfully");
+            logger.logPrintF(LogSeverity::INFO, MODULE, "Stop scan successfully");
         }
         break;
     }
@@ -207,6 +170,28 @@ static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_
     }
 }
 
+void TaskBluetooth::setup()
+{
+    for (uint16_t dev = 0u; dev < MAX_BLUETOOTH_DEVICES; dev++)
+    {
+        switch (irvineConfiguration.bluetooth.devices[dev].type)
+        {
+        case BluetoothDeviceType::JAALEE_SENSOR:
+            // todo shared pointer
+            devices.push_back(new BluetoothJaaleeTempSensor(dev));
+            break;
+        default:
+            devices.push_back(nullptr);
+            break;
+        }
+    }
+}
+
 void TaskBluetooth::loop()
 {
+}
+
+void TaskBluetooth::parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len)
+{
+    devices[deviceIndex]->parseAdvertisedData(data, len);
 }

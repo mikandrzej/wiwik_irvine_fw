@@ -2,10 +2,17 @@
 #include "Gps.h"
 #include <IrvineConfiguration.h>
 // #include <cmath>
+#include <Logger.h>
+
+#include <DataHandler.h>
 
 #define TINY_GSM_MODEM_SIM7600 // A7670's AT instruction is compatible with SIM7600
 #include <TinyGsmClient.h>
 extern TinyGsm modem;
+
+#include <TimeLib.h>
+
+const char MODULE[] = "GPS";
 
 void Gps::loop()
 {
@@ -13,40 +20,34 @@ void Gps::loop()
     uint32_t diff;
 
     diff = t - m_last_gps_try;
-    if (diff > irvineConfiguration.gps.maxInterval)
+    if (diff > 1000u)
     {
         m_last_gps_try = t;
 
         String raw_gps = modem.getGPSraw();
 
-        if (raw_gps.length() > 0)
+        if (raw_gps.length() > 10)
         {
-            Serial.println("Gps data: " + raw_gps);
-            if (m_onGpsDataReady)
-            {
-                GpsData gpsData(raw_gps);
+            logger.logPrintF(LogSeverity::DEBUG, MODULE, "Received GPS data: %s", raw_gps.c_str());
 
-                // if (!updateRequired(gpsData.m_latitude, gpsData.m_longitude))
-                // {
-                //     Serial.println("Update not required");
-                // }
-                // else
-                // {
-                m_onGpsDataReady(gpsData);
-                // }
+            GpsData gpsData(raw_gps);
+
+            if (updateRequired(gpsData.m_latitude, gpsData.m_longitude))
+            {
+                DataHandler::handleGpsData(gpsData.m_longitude,
+                                           gpsData.m_latitude,
+                                           gpsData.m_altitude,
+                                           gpsData.m_speed,
+                                           gpsData.m_unixTimestamp,
+                                           gpsData.m_satellites,
+                                           gpsData.m_precision);
+            }
+            else
+            {
+                logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS data update not required");
             }
         }
     }
-}
-
-void Gps::setGpsMinDistance(const uint32_t meters)
-{
-    m_min_distance = meters;
-}
-
-void Gps::setOnGpsDataReady(const std::function<void(GpsData &)> &newOnGpsDataReady)
-{
-    m_onGpsDataReady = newOnGpsDataReady;
 }
 
 bool Gps::updateRequired(double latitude, double longitude)
@@ -57,7 +58,7 @@ bool Gps::updateRequired(double latitude, double longitude)
     {
         result = true;
     }
-    else if ((millis() - m_last_gps_try) > m_max_time)
+    else if ((millis() - m_last_gps_try) > irvineConfiguration.gps.maxInterval)
     {
         result = true;
     }
@@ -70,7 +71,7 @@ bool Gps::updateRequired(double latitude, double longitude)
             distance_sqr *= -1.0;
 
         // auto distance = sqrt(distance_sqr);
-        auto min_distance_sqr = (double)(m_min_distance * m_min_distance);
+        static auto min_distance_sqr = (double)irvineConfiguration.gps.minimumDistance * (double)irvineConfiguration.gps.minimumDistance;
 
         if (distance_sqr > min_distance_sqr)
         {
@@ -116,7 +117,7 @@ GpsData::GpsData(String &raw)
     Serial.println("Parsing gps data...");
     m_raw = raw;
     int iterator = 0;
-    (void)getNextSubstring(raw, ',', &iterator).toInt();
+    m_mode = (uint8_t)getNextSubstring(raw, ',', &iterator).toInt();
     m_satellites = getNextSubstring(raw, ',', &iterator).toInt();
 
     (void)getNextSubstring(raw, ',', &iterator);
@@ -154,21 +155,27 @@ GpsData::GpsData(String &raw)
         m_longitude *= -1.0;
 
     String date = getNextSubstring(raw, ',', &iterator);
-    String day = date.substring(0, 2);
-    String month = date.substring(2, 4);
-    String year = "20" + date.substring(4, 6);
     String time = getNextSubstring(raw, ',', &iterator);
-    String hour = time.substring(0, 2);
-    String minute = time.substring(2, 4);
-    String second = time.substring(4, 6);
 
-    m_timestamp = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second + " GMT+0";
+    tmElements_t tm;
+    int day, month, year, hour, minute, second;
+    sscanf(date.c_str(), "%2d%2d%2d", &day, &month, &year);
+    sscanf(time.c_str(), "%2d%2d%2d", &hour, &minute, &second);
+
+    tm.Day = day;
+    tm.Month = month;
+    tm.Year = CalendarYrToTm(2000 + year); // Dodajemy 2000, ponieważ rok podawany jest jako YY
+    tm.Hour = hour;
+    tm.Minute = minute;
+    tm.Second = second;
+
+    m_unixTimestamp = makeTime(tm);
 
     m_altitude = getNextSubstring(raw, ',', &iterator).toDouble();
     double speed_knots = getNextSubstring(raw, ',', &iterator).toDouble();
     m_speed = speed_knots * 1.852000;
 
-    (void)getNextSubstring(raw, ',', &iterator);
-    (void)getNextSubstring(raw, ',', &iterator);
     m_precision = getNextSubstring(raw, ',', &iterator).toDouble();
+    (void)getNextSubstring(raw, ',', &iterator);
+    (void)getNextSubstring(raw, ',', &iterator);
 }
