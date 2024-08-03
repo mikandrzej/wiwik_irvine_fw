@@ -4,8 +4,7 @@
 #include <ModemManagement.h>
 #include <Logger.h>
 
-extern EgTinyGsm modem;
-MqttController mqttController(modem);
+MqttController mqttController;
 
 const char MODULE[] = "MQTT";
 
@@ -14,17 +13,13 @@ MqttSubscribedTopic::MqttSubscribedTopic(char *topic, MqttCallback callback) : t
     topicLength = strlen(topic);
 }
 
-MqttController::MqttController(EgTinyGsm &modem)
-{
-    client = TinyGsmClient(modem, 0);
-    mqtt = PubSubClient(client);
-}
-
 void MqttController::begin()
 {
-    mqtt.setServer(irvineConfiguration.server.mqttHost, irvineConfiguration.server.mqttPort);
-    mqtt.setCallback([this](char *topic, uint8_t *msg, unsigned int len)
-                     { this->messageCallback(topic, msg, len); });
+    client = new TinyGsmClient(modem, 0);
+    mqtt = new PubSubClient(*client);
+    mqtt->setServer(irvineConfiguration.server.mqttHost, irvineConfiguration.server.mqttPort);
+    mqtt->setCallback([this](char *topic, uint8_t *msg, unsigned int len)
+                      { this->messageCallback(topic, msg, len); });
 }
 
 void MqttController::loop()
@@ -40,28 +35,30 @@ void MqttController::loop()
         break;
 
     case MqttState::CONNECTING:
-        if (xSemaphoreTake(modemManagement.semaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
         {
-            if (modem.isGprsConnected())
+            if (modemManagement.isConnected())
             {
                 bool result;
                 if (irvineConfiguration.server.mqttHost[0u] != '\0')
                 {
-                    result = mqtt.connect(irvineConfiguration.device.deviceId,
-                                          irvineConfiguration.server.mqttUsername,
-                                          irvineConfiguration.server.mqttPassword);
-                    logger.logPrintF(LogSeverity::INFO, MODULE, "Connecting to MQTT %s:%d with %s/%s",
+                    logger.logPrintF(LogSeverity::INFO, MODULE, "Connecting to MQTT %s:%d with %s/%s as %s",
                                      irvineConfiguration.server.mqttHost,
                                      irvineConfiguration.server.mqttPort,
                                      irvineConfiguration.server.mqttUsername,
-                                     irvineConfiguration.server.mqttPassword);
+                                     irvineConfiguration.server.mqttPassword,
+                                     irvineConfiguration.device.deviceId);
+                    result = mqtt->connect(irvineConfiguration.device.deviceId,
+                                           irvineConfiguration.server.mqttUsername,
+                                           irvineConfiguration.server.mqttPassword);
                 }
                 else
                 {
-                    logger.logPrintF(LogSeverity::WARNING, MODULE, "Connecting to MQTT %s:%d without credetials",
+                    logger.logPrintF(LogSeverity::WARNING, MODULE, "Connecting to MQTT %s:%d without credetials as %s",
                                      irvineConfiguration.server.mqttHost,
-                                     irvineConfiguration.server.mqttPort);
-                    result = mqtt.connect(irvineConfiguration.device.deviceId);
+                                     irvineConfiguration.server.mqttPort,
+                                     irvineConfiguration.device.deviceId);
+                    result = mqtt->connect(irvineConfiguration.device.deviceId);
                 }
 
                 if (result)
@@ -70,7 +67,7 @@ void MqttController::loop()
 
                     for (auto &subscribedTopic : subscribedTopics)
                     {
-                        result = mqtt.subscribe(subscribedTopic->topic);
+                        result = mqtt->subscribe(subscribedTopic->topic);
                         if (result)
                         {
                             logger.logPrintF(LogSeverity::INFO, MODULE, "Succesfully subscribed topic %s", subscribedTopic->topic);
@@ -86,34 +83,44 @@ void MqttController::loop()
                         state = MqttState::CONNECTED;
                     }
                 }
+                else
+                {
+                    logger.logPrintF(LogSeverity::INFO, MODULE, "Connecting to MQTT failed");
+                }
             }
-            xSemaphoreGive(modemManagement.semaphore);
+            xSemaphoreGive(modemSemaphore);
         }
         break;
 
     case MqttState::CONNECTED:
-        if (xSemaphoreTake(modemManagement.semaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
         {
-            if (mqtt.connected())
+            if (modemManagement.isConnected() && mqtt->connected())
             {
-                mqtt.loop();
+                mqtt->loop();
             }
             else
             {
                 state = MqttState::CONNECTING;
             }
-            xSemaphoreGive(modemManagement.semaphore);
+            xSemaphoreGive(modemSemaphore);
         }
         break;
 
     case MqttState::DISCONNECT:
-        if (xSemaphoreTake(modemManagement.semaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
         {
-            mqtt.disconnect();
+            mqtt->disconnect();
             state = MqttState::DISCONNECTED;
 
-            xSemaphoreGive(modemManagement.semaphore);
+            xSemaphoreGive(modemSemaphore);
         }
+    }
+
+    if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+    {
+        mqtt->loop();
+        xSemaphoreGive(modemSemaphore);
     }
 }
 
@@ -122,21 +129,21 @@ void MqttController::subscribe(MqttSubscribedTopic *topic)
     subscribedTopics.push_back(topic);
 }
 
-void MqttController::publish(const char *const topic, const char *const msg)
+void MqttController::publish(const char *const topic, const char *const msg, const bool retain)
 {
-    if (xSemaphoreTake(modemManagement.semaphore, (TickType_t)10) == pdTRUE)
+    if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
     {
-        mqtt.publish(topic, msg);
-        xSemaphoreGive(modemManagement.semaphore);
+        mqtt->publish(topic, msg, retain);
+        xSemaphoreGive(modemSemaphore);
     }
 }
 
-void MqttController::publish(const char *const topic, const uint8_t *const msg, uint32_t len)
+void MqttController::publish(const char *const topic, const uint8_t *const msg, uint32_t len, const bool retain)
 {
-    if (xSemaphoreTake(modemManagement.semaphore, (TickType_t)10) == pdTRUE)
+    if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
     {
-        mqtt.publish(topic, msg, len);
-        xSemaphoreGive(modemManagement.semaphore);
+        mqtt->publish(topic, msg, len, retain);
+        xSemaphoreGive(modemSemaphore);
     }
 }
 

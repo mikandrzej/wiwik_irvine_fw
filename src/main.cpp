@@ -18,6 +18,8 @@
 #include <Service.h>
 #include <ModemManagement.h>
 
+#include <TaskGps.h>
+
 #define TIMER0_INTERVAL_MS 1000
 
 #define BOARD_MISO_PIN (15)
@@ -29,14 +31,7 @@
 #define BOARD_CAN_RX_PIN (25)
 #define BOARD_CAN_SE_PIN (4)
 
-#define SerialAT Serial1
-#define MODEM_UART_BAUD 115200
-#define MODEM_PIN_TX 19
-#define MODEM_PIN_RX 18
-
 #define CONSOLE_UART_BAUD 115200
-
-EgTinyGsm modem(SerialAT);
 
 uint32_t software_version = 5u;
 
@@ -45,18 +40,24 @@ StaticTask_t xBleTaskBuffer;
 StackType_t xBleStack[BLE_TASK_STACK_SIZE];
 TaskHandle_t xBleTaskHandle = NULL;
 
-#define MQTT_TASK_STACK_SIZE 8192
+#define MQTT_TASK_STACK_SIZE 4096
 StaticTask_t xMqttTaskBuffer;
 StackType_t xMqttStack[MQTT_TASK_STACK_SIZE];
 TaskHandle_t xMqttTaskHandle = NULL;
+
+#define GPS_TASK_STACK_SIZE 4096
+StaticTask_t xGpsTaskBuffer;
+StackType_t xGpsStack[GPS_TASK_STACK_SIZE];
+TaskHandle_t xGpsTaskHandle = NULL;
 
 void setup()
 {
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(CONSOLE_UART_BAUD);
-  logger.begin(&Serial);
 
-  SerialAT.begin(MODEM_UART_BAUD, SERIAL_8N1, MODEM_PIN_RX, MODEM_PIN_TX);
+  logger.begin(&Serial);
+  irvineConfiguration.begin();
+  modemManagement.begin();
 
   logger.logPrintF(LogSeverity::INFO, "MAIN", "Application started");
 
@@ -80,28 +81,37 @@ void setup()
 
   Serial.printf("Software version: %u\r\n", software_version);
 
-  modemManagement.begin();
+  // service.begin();
 
-  irvineConfiguration.begin();
-  service.begin();
-
-  xBleTaskHandle = xTaskCreateStatic(
+  xBleTaskHandle = xTaskCreateStaticPinnedToCore(
       mqttControllerTask,   /* Function that implements the task. */
       "MQTT",               /* Text name for the task. */
       MQTT_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
       (void *)1,            /* Parameter passed into the task. */
       tskIDLE_PRIORITY,     /* Priority at which the task is created. */
       xMqttStack,           /* Array to use as the task's stack. */
-      &xMqttTaskBuffer);    /* Variable to hold the task's data structure. */
+      &xMqttTaskBuffer,
+      1); /* Variable to hold the task's data structure. */
 
-  xMqttTaskHandle = xTaskCreateStatic(
+  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
       taskBluetooth,       /* Function that implements the task. */
       "BLE",               /* Text name for the task. */
       BLE_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
       (void *)1,           /* Parameter passed into the task. */
       tskIDLE_PRIORITY,    /* Priority at which the task is created. */
       xBleStack,           /* Array to use as the task's stack. */
-      &xBleTaskBuffer);    /* Variable to hold the task's data structure. */
+      &xBleTaskBuffer,
+      1); /* Variable to hold the task's data structure. */
+
+  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
+      taskGps,             /* Function that implements the task. */
+      "GPS",               /* Text name for the task. */
+      GPS_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+      (void *)1,           /* Parameter passed into the task. */
+      tskIDLE_PRIORITY,    /* Priority at which the task is created. */
+      xGpsStack,           /* Array to use as the task's stack. */
+      &xGpsTaskBuffer,
+      1); /* Variable to hold the task's data structure. */
 }
 
 void loop()

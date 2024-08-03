@@ -50,9 +50,12 @@ bool IrvineConfiguration::begin()
     sprintf(server.mqttPassword, "password");
 
     modem.reportInterval = 10000u;
+    sprintf(modem.pin, "4967");
+    sprintf(modem.apn, "internet");
+    sprintf(modem.apnUsername, "internet");
+    sprintf(modem.apnPassword, "internet");
 
     gps.maxInterval = 60000u;
-
 
     printConfiguration();
 

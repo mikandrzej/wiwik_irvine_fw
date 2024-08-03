@@ -3,6 +3,11 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <Arduino.h>
+#include <EgTinyGsm.h>
+
+extern SemaphoreHandle_t modemSemaphore;
+
+extern EgTinyGsm modem;
 
 enum class ModemManagementState
 {
@@ -22,7 +27,7 @@ public:
     void begin();
     void loop();
 
-    SemaphoreHandle_t semaphore;
+    bool isConnected();
 
 private:
     ModemManagementState state = ModemManagementState::UNINITIALIZED;
@@ -30,6 +35,7 @@ private:
     String modemInfo;
     String simCcid;
     String simImsi;
+    bool connected;
 };
 
 extern ModemManagement modemManagement;

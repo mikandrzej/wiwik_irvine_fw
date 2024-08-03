@@ -23,10 +23,11 @@ public:
     void loop();
 
 private:
-    uint32_t m_last_gps_try;
-    uint32_t m_last_gps_shot;
+    uint32_t m_last_gps_try = 0u;
     double m_last_latitude = 999.0;
     double m_last_longitude = 999.0;
 
     bool updateRequired(double latitude, double longitude);
 };
+
+extern Gps gps;

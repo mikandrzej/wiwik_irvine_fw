@@ -3,34 +3,31 @@
 #include <IrvineConfiguration.h>
 // #include <cmath>
 #include <Logger.h>
-
+#include <ModemManagement.h>
 #include <DataHandler.h>
 
-#define TINY_GSM_MODEM_SIM7600 // A7670's AT instruction is compatible with SIM7600
-#include <TinyGsmClient.h>
-extern TinyGsm modem;
+#include <Device.h>
 
 #include <TimeLib.h>
 
 const char MODULE[] = "GPS";
 
+Gps gps;
+
 void Gps::loop()
 {
-    uint32_t t = millis();
-    uint32_t diff;
-
-    diff = t - m_last_gps_try;
-    if (diff > 1000u)
+    if (xSemaphoreTake(modemSemaphore, (TickType_t)portMAX_DELAY) == pdTRUE)
     {
-        m_last_gps_try = t;
-
         String raw_gps = modem.getGPSraw();
+        xSemaphoreGive(modemSemaphore);
 
         if (raw_gps.length() > 10)
         {
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Received GPS data: %s", raw_gps.c_str());
 
             GpsData gpsData(raw_gps);
+
+            device.updateGpsTime(gpsData.m_unixTimestamp);
 
             if (updateRequired(gpsData.m_latitude, gpsData.m_longitude))
             {

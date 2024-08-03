@@ -26,18 +26,17 @@ public:
 class MqttController
 {
 public:
-    MqttController(EgTinyGsm &modem);
     void begin();
     void loop();
     void subscribe(MqttSubscribedTopic *topic);
-    void publish(const char *const topic, const char *const msg);
-    void publish(const char *const topic, const uint8_t *const msg, uint32_t len);
+    void publish(const char *const topic, const char *const msg, const bool retain = false);
+    void publish(const char *const topic, const uint8_t *const msg, uint32_t len, const bool retain = false);
 
 private:
     void messageCallback(char *topic, uint8_t *message, unsigned int messageLength);
 
-    TinyGsmClient client;
-    PubSubClient mqtt;
+    TinyGsmClient *client;
+    PubSubClient *mqtt;
     MqttState state = MqttState::DISCONNECTED;
     // todo shared pointer
     std::vector<MqttSubscribedTopic *> subscribedTopics;
