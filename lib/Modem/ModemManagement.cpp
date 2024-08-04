@@ -160,7 +160,7 @@ void ModemManagement::loop()
         break;
     }
     case ModemManagementState::APN_DISCONNECTED:
-        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
         {
             if (modem.isNetworkConnected())
             {
@@ -181,7 +181,7 @@ void ModemManagement::loop()
         break;
 
     case ModemManagementState::APN_CONNECTED:
-        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
         {
             if (!modem.isGprsConnected())
             {

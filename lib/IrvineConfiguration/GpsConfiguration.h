@@ -17,6 +17,4 @@ public:
     uint32_t highPrecisionOnDemandDuration = 0u;
     bool jammingDetection = false;
     // Add more parameters as needed
-
-    bool setGpsMaxInterval(const uint32_t value);
 };

@@ -7,7 +7,7 @@ class BluetoothJaaleeTempSensor : public AbstractBluetoothBleDevice
 public:
     BluetoothJaaleeTempSensor(const uint16_t configIndex);
 
-    void parseAdvertisedData(const uint8_t *const data, const uint16_t len) override;
+    void parseAdvertisedData(const uint8_t *const data, const uint16_t len, int16_t rssi) override;
 
 private:
     void notifyNeeded();

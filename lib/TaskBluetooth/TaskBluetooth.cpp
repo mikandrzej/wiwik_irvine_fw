@@ -21,7 +21,7 @@ static esp_ble_scan_params_t ble_scan_params = {
     .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
     .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
     .scan_interval = 0x1000,
-    .scan_window = 0x950,
+    .scan_window = 0x1000,
     .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE};
 
 class TaskBluetooth
@@ -29,7 +29,7 @@ class TaskBluetooth
 public:
     void setup();
     void loop();
-    void parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len);
+    void parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len, int16_t rssi);
 
 private:
     std::vector<AbstractBluetoothBleDevice *> devices;
@@ -141,7 +141,7 @@ static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_
             {
                 if (!memcmp(irvineConfiguration.bluetooth.devices[k].macAddress, scan_result->scan_rst.bda, 6u))
                 {
-                    bluetoothTaskData.parseAdvertisedData(k, scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len);
+                    bluetoothTaskData.parseAdvertisedData(k, scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len, scan_result->scan_rst.rssi);
                 }
             }
 
@@ -191,7 +191,7 @@ void TaskBluetooth::loop()
 {
 }
 
-void TaskBluetooth::parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len)
+void TaskBluetooth::parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len, int16_t rssi)
 {
-    devices[deviceIndex]->parseAdvertisedData(data, len);
+    devices[deviceIndex]->parseAdvertisedData(data, len, rssi);
 }

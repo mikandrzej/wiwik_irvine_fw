@@ -35,7 +35,7 @@ void MqttController::loop()
         break;
 
     case MqttState::CONNECTING:
-        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
         {
             if (modemManagement.isConnected())
             {
@@ -93,7 +93,7 @@ void MqttController::loop()
         break;
 
     case MqttState::CONNECTED:
-        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
         {
             if (modemManagement.isConnected() && mqtt->connected())
             {
@@ -108,7 +108,7 @@ void MqttController::loop()
         break;
 
     case MqttState::DISCONNECT:
-        if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
         {
             mqtt->disconnect();
             state = MqttState::DISCONNECTED;
@@ -117,7 +117,7 @@ void MqttController::loop()
         }
     }
 
-    if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+    if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
     {
         mqtt->loop();
         xSemaphoreGive(modemSemaphore);
@@ -131,7 +131,7 @@ void MqttController::subscribe(MqttSubscribedTopic *topic)
 
 void MqttController::publish(const char *const topic, const char *const msg, const bool retain)
 {
-    if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+    if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
     {
         mqtt->publish(topic, msg, retain);
         xSemaphoreGive(modemSemaphore);
@@ -140,7 +140,7 @@ void MqttController::publish(const char *const topic, const char *const msg, con
 
 void MqttController::publish(const char *const topic, const uint8_t *const msg, uint32_t len, const bool retain)
 {
-    if (xSemaphoreTake(modemSemaphore, (TickType_t)10) == pdTRUE)
+    if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
     {
         mqtt->publish(topic, msg, len, retain);
         xSemaphoreGive(modemSemaphore);

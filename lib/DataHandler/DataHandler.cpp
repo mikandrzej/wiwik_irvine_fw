@@ -7,7 +7,7 @@
 
 const char MODULE[] = "DATA_HDL";
 
-void DataHandler::handleJaaleeTemperatureData(const uint8_t bluetoothDeviceId, const float temperature, const float humidity, const float battery)
+void DataHandler::handleJaaleeTemperatureData(const uint8_t bluetoothDeviceId, const float temperature, const float humidity, const float battery, const int16_t rssi)
 {
     uint64_t unixTimestamp = device.getUnixTimestamp();
 
@@ -17,6 +17,7 @@ void DataHandler::handleJaaleeTemperatureData(const uint8_t bluetoothDeviceId, c
     doc["temp"] = temperature;
     doc["hum"] = humidity;
     doc["bat"] = battery;
+    doc["rssi"] = rssi;
     doc["t"] = unixTimestamp;
 
     char topic[100];
@@ -29,28 +30,27 @@ void DataHandler::handleJaaleeTemperatureData(const uint8_t bluetoothDeviceId, c
             irvineConfiguration.bluetooth.devices[bluetoothDeviceId].macAddress[3],
             irvineConfiguration.bluetooth.devices[bluetoothDeviceId].macAddress[4],
             irvineConfiguration.bluetooth.devices[bluetoothDeviceId].macAddress[5]);
-    sprintf(topic, "irvine/measures/%s/ble/%s", irvineConfiguration.device.deviceId, sensor);
+    sprintf(topic, "irvine/%s/measures/ble/%s", irvineConfiguration.device.deviceId, sensor);
 
     serializeJson(doc, msg, sizeof(msg));
-    mqttController.publish(topic, msg, true);
+    mqttController.publish(topic, msg);
 }
 
-void DataHandler::handleGpsData(const float longitude, const float latitude, const float altitude, const float speed, const uint64_t unixTimestamp, const uint8_t satellites, const float precision)
+void DataHandler::handleGpsData(const GpsData &gpsData)
 {
-    DynamicJsonDocument doc(200);
-    doc["gt"] = unixTimestamp; // gps timestamp
-    doc["lon"] = longitude;
-    doc["lat"] = latitude;
-    doc["alt"] = altitude;
-    doc["v"] = speed;
-    doc["sat"] = satellites;
-    doc["p"] = precision;
+    DynamicJsonDocument doc(500);
+    doc["gt"] = gpsData.unixTimestamp; // gps timestamp
+    doc["lng"] = gpsData.longitude;
+    doc["lat"] = gpsData.latitude;
+    doc["alt"] = gpsData.altitude;
+    doc["spd"] = gpsData.speed;
+    doc["sat"] = gpsData.satellites;
     doc["t"] = device.getUnixTimestamp();
 
     char topic[50];
-    char msg[100];
-    sprintf(topic, "irvine/measures/%s/gps/", irvineConfiguration.device.deviceId);
+    char msg[500];
+    sprintf(topic, "irvine/%s/measures/gps", irvineConfiguration.device.deviceId);
 
     serializeJson(doc, msg, sizeof(msg));
-    mqttController.publish(topic, msg, true);
+    mqttController.publish(topic, msg);
 }

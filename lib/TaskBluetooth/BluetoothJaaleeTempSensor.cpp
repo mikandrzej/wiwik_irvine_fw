@@ -19,7 +19,7 @@ BluetoothJaaleeTempSensor::BluetoothJaaleeTempSensor(const uint16_t configIndex)
 {
 }
 
-void BluetoothJaaleeTempSensor::parseAdvertisedData(const uint8_t *const data, const uint16_t len)
+void BluetoothJaaleeTempSensor::parseAdvertisedData(const uint8_t *const data, const uint16_t len, int16_t rssi)
 {
     if (len != sizeof(JaaleeAdvertisedDataStruct))
     {
@@ -76,9 +76,9 @@ void BluetoothJaaleeTempSensor::parseAdvertisedData(const uint8_t *const data, c
 
     if (doNotify)
     {
-        logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f\%", configIndex, temperature, humidity, battery);
+        logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f\% rssi: %d", configIndex, temperature, humidity, battery, rssi);
 
-        DataHandler::handleJaaleeTemperatureData(configIndex, temperature, humidity, battery);
+        DataHandler::handleJaaleeTemperatureData(configIndex, temperature, humidity, battery, rssi);
 
         lastTemperature = temperature;
         lastHumidity = humidity;

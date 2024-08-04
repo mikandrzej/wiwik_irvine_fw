@@ -1,13 +1,13 @@
 #include "TaskGps.h"
 
-#include <Gps.h>
+#include "GpsController.h"
 
 void taskGps(void *)
 {
     while (1)
     {
-        gps.loop();
-        // todo vtaskdelayuntil
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        gpsController.loop();
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }

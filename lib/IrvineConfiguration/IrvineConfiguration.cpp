@@ -39,6 +39,16 @@ bool IrvineConfiguration::begin()
     bluetooth.devices[0].type = BluetoothDeviceType::JAALEE_SENSOR;
     bluetooth.devices[0].maxInterval = 10000u;
 
+    bluetooth.devices[1].macAddress[0] = 0xE5;
+    bluetooth.devices[1].macAddress[1] = 0x8B;
+    bluetooth.devices[1].macAddress[2] = 0x12;
+    bluetooth.devices[1].macAddress[3] = 0xEC;
+    bluetooth.devices[1].macAddress[4] = 0xC3;
+    bluetooth.devices[1].macAddress[5] = 0xA8;
+    
+    bluetooth.devices[1].type = BluetoothDeviceType::JAALEE_SENSOR;
+    bluetooth.devices[1].maxInterval = 10000u;
+
     uint8_t mac[6];
     WiFi.macAddress(mac);
     sprintf(device.deviceId, "irvine_%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -56,6 +66,7 @@ bool IrvineConfiguration::begin()
     sprintf(modem.apnPassword, "internet");
 
     gps.maxInterval = 60000u;
+    gps.minimumDistance = 100u;
 
     printConfiguration();
 
