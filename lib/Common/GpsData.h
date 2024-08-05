@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-struct GpsData
+typedef struct
 {
     uint8_t mode;
     uint8_t satellites;
@@ -11,4 +11,4 @@ struct GpsData
     double altitude;
     double speed;
     uint64_t unixTimestamp;
-};
+} GpsData;

@@ -17,21 +17,13 @@
 #include <MqttControllerTask.h>
 #include <Service.h>
 #include <ModemManagement.h>
+#include <DataLogger.h>
+#include <TaskDataLogger.h>
 
 #include <TaskGps.h>
+#include <HwConfiguration.h>
 
 #define TIMER0_INTERVAL_MS 1000
-
-#define BOARD_MISO_PIN (15)
-#define BOARD_MOSI_PIN (13)
-#define BOARD_SCK_PIN (2)
-#define BOARD_CS_PIN (32)
-
-#define BOARD_CAN_TX_PIN (33)
-#define BOARD_CAN_RX_PIN (25)
-#define BOARD_CAN_SE_PIN (4)
-
-#define CONSOLE_UART_BAUD 115200
 
 uint32_t software_version = 5u;
 
@@ -50,12 +42,18 @@ StaticTask_t xGpsTaskBuffer;
 StackType_t xGpsStack[GPS_TASK_STACK_SIZE];
 TaskHandle_t xGpsTaskHandle = NULL;
 
+#define DATA_LOGGER_TASK_STACK_SIZE 4096
+StaticTask_t xDataLoggerTaskBuffer;
+StackType_t xDataLoggerStack[GPS_TASK_STACK_SIZE];
+TaskHandle_t xDataLoggerTaskHandle = NULL;
+
 void setup()
 {
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(CONSOLE_UART_BAUD);
 
   logger.begin(&Serial);
+  dataLogger.begin();
   irvineConfiguration.begin();
   modemManagement.begin();
 
@@ -111,6 +109,16 @@ void setup()
       tskIDLE_PRIORITY,    /* Priority at which the task is created. */
       xGpsStack,           /* Array to use as the task's stack. */
       &xGpsTaskBuffer,
+      1); /* Variable to hold the task's data structure. */
+
+  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
+      taskDataLogger,              /* Function that implements the task. */
+      "D_LOGGER",                  /* Text name for the task. */
+      DATA_LOGGER_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+      (void *)1,                   /* Parameter passed into the task. */
+      tskIDLE_PRIORITY,            /* Priority at which the task is created. */
+      xDataLoggerStack,            /* Array to use as the task's stack. */
+      &xDataLoggerTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 }
 

@@ -4,20 +4,24 @@
 #include <ArduinoJson.h>
 #include <IrvineConfiguration.h>
 #include <stdint.h>
+#include <DataLogger.h>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 
 const char MODULE[] = "DATA_HDL";
 
-void DataHandler::handleJaaleeTemperatureData(const uint8_t bluetoothDeviceId, const float temperature, const float humidity, const float battery, const int16_t rssi)
+void DataHandler::handleJaaleeTemperatureData(const JaaleeData &data, const uint8_t bluetoothDeviceId)
 {
     uint64_t unixTimestamp = device.getUnixTimestamp();
 
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Unix timestamp: %llu", unixTimestamp);
 
     DynamicJsonDocument doc(100);
-    doc["temp"] = temperature;
-    doc["hum"] = humidity;
-    doc["bat"] = battery;
-    doc["rssi"] = rssi;
+    doc["temp"] = data.temperature;
+    doc["hum"] = data.humidity;
+    doc["bat"] = data.battery;
+    doc["rssi"] = data.rssi;
     doc["t"] = unixTimestamp;
 
     char topic[100];
@@ -34,10 +38,18 @@ void DataHandler::handleJaaleeTemperatureData(const uint8_t bluetoothDeviceId, c
 
     serializeJson(doc, msg, sizeof(msg));
     mqttController.publish(topic, msg);
+
+    DataLoggerQueueItem logItem{
+        .type = DataLoggerLogType::JAALEE,
+        .unixTimestamp = unixTimestamp,
+        .jaalee = data};
+    xQueueSend(dataLoggerQueue, &logItem, 0);
 }
 
 void DataHandler::handleGpsData(const GpsData &gpsData)
 {
+    uint64_t unixTimestamp = device.getUnixTimestamp();
+
     DynamicJsonDocument doc(500);
     doc["gt"] = gpsData.unixTimestamp; // gps timestamp
     doc["lng"] = gpsData.longitude;
@@ -45,7 +57,7 @@ void DataHandler::handleGpsData(const GpsData &gpsData)
     doc["alt"] = gpsData.altitude;
     doc["spd"] = gpsData.speed;
     doc["sat"] = gpsData.satellites;
-    doc["t"] = device.getUnixTimestamp();
+    doc["t"] = unixTimestamp;
 
     char topic[50];
     char msg[500];
@@ -53,4 +65,10 @@ void DataHandler::handleGpsData(const GpsData &gpsData)
 
     serializeJson(doc, msg, sizeof(msg));
     mqttController.publish(topic, msg);
+
+    DataLoggerQueueItem logItem{
+        .type = DataLoggerLogType::GPS,
+        .unixTimestamp = unixTimestamp,
+        .gps = gpsData};
+    xQueueSend(dataLoggerQueue, &logItem, 0);
 }

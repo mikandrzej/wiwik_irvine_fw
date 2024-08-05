@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AbstractBluetoothBleDevice.h"
+#include "JaaleeData.h"
 
 class BluetoothJaaleeTempSensor : public AbstractBluetoothBleDevice
 {
