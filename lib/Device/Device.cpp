@@ -3,8 +3,6 @@
 
 Device device;
 
-const char MODULE[] = "DEVICE";
-
 uint64_t Device::getUnixTimestamp()
 {
     switch (irvineConfiguration.time.source)
@@ -49,7 +47,6 @@ uint64_t Device::getFallbackUnixTimestamp()
 
 uint64_t Device::calculateUnixTimestamp(const uint64_t lastValue, const uint32_t lastTimestamp)
 {
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "lastVal: %llu, lastTimestamp: %lu", lastValue, lastTimestamp);
     uint32_t msSinceLastValue = millis() - lastTimestamp;
     msSinceLastValue /= 1000u;
     return lastValue + (uint64_t)msSinceLastValue;
@@ -57,21 +54,18 @@ uint64_t Device::calculateUnixTimestamp(const uint64_t lastValue, const uint32_t
 
 void Device::updateGpsTime(uint64_t unixTime)
 {
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "Update GPS time: %llu", unixTime);
     gpsUnixTime = unixTime;
     gpsUnixTimeTimestamp = millis();
 }
 
 void Device::updateGsmTime(uint64_t unixTime)
 {
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "Update GSM time: %llu", unixTime);
     gsmUnixTime = unixTime;
     gsmUnixTimeTimestamp = millis();
 }
 
 void Device::updateNtpTime(uint64_t unixTime)
 {
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "Update NTP time: %llu", unixTime);
     ntpUnixTime - unixTime;
     ntpUnixTimeTimestamp = millis();
 }

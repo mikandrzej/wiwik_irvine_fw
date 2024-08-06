@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <GpsData.h>
+#include <memory>
 
 enum class GpsState
 {

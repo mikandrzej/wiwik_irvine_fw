@@ -2,13 +2,40 @@
 
 #include <stdint.h>
 
-typedef struct
+#include <DataLoggable.h>
+
+class GpsData : public DataLoggable
 {
-    uint8_t mode;
-    uint8_t satellites;
-    double latitude;
-    double longitude;
-    double altitude;
-    double speed;
-    uint64_t unixTimestamp;
-} GpsData;
+public:
+    GpsData();
+    GpsData(uint8_t mode,
+            uint8_t satellites,
+            double latitude,
+            double longitude,
+            double altitude,
+            double speed,
+            uint64_t unixTimestamp);
+    uint8_t mode = 0u;
+    uint8_t satellites = 0u;
+    double latitude = 0.0;
+    double longitude = 0.0;
+    double altitude = 0.0;
+    double speed = 0.0;
+    uint64_t unixTimestamp = 0u;
+
+    String logData()
+    {
+        char txt[200];
+        (void)sprintf(txt, "%llu;%u;%u;%f;%f;%f;%f;%llu\r\n",
+                      DataLoggable::unixTimestamp,
+                      mode,
+                      satellites,
+                      latitude,
+                      longitude,
+                      altitude,
+                      speed,
+                      unixTimestamp);
+        return String(txt);
+    }
+    String logItem() { return "gps"; }
+};

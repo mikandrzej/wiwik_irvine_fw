@@ -6,50 +6,40 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
-#include <GpsData.h>
-#include <JaaleeData.h>
-
 #include <stdint.h>
 
-enum class DataLoggerLogType
-{
-    GPS,
-    JAALEE,
-    MDOEM
-};
+#include <DataLoggable.h>
 
 typedef struct
 {
-    DataLoggerLogType type;
-    uint64_t unixTimestamp;
-    union
-    {
-        JaaleeData jaalee;
-        GpsData gps;
-    };
+    DataLoggable *data;
 } DataLoggerQueueItem;
+
+typedef struct
+{
+    String path;
+    fs::File file;
+} PathFileData;
 
 class DataLogger
 {
 public:
     void begin();
 
-    void logData(const uint64_t unixTimestamp, const GpsData &gpsData);
-    void logData(const uint64_t unixTimestamp, const JaaleeData &jaaleeData);
+    void logData(DataLoggable *data);
+
+    fs::File *getFile(String &path);
 
 private:
-    void saveData();
-
-private:
-    String logFilePath = "/log/log.csv";
-
-    fs::File file;
+    String logPathPrefix = "/log/";
 
     int linesToSave = {0};
 
     uint8_t cardType;
     uint64_t cardSize;
     bool initialized;
+
+    std::vector<PathFileData *> pathFiles{};
 };
 
 extern DataLogger dataLogger;

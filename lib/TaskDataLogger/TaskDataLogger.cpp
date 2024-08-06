@@ -17,18 +17,8 @@ void taskDataLogger(void *)
                           &receivedItem,
                           pdMS_TO_TICKS(10000)) == pdPASS)
         {
-            switch (receivedItem.type)
-            {
-            case DataLoggerLogType::GPS:
-                dataLogger.logData(receivedItem.unixTimestamp, receivedItem.gps);
-                break;
-            case DataLoggerLogType::JAALEE:
-                dataLogger.logData(receivedItem.unixTimestamp, receivedItem.jaalee);
-                break;
-            default:
-                logger.logPrintF(LogSeverity::INFO, MODULE, "Unknown log type %d", static_cast<int>(receivedItem.type));
-                break;
-            }
+            dataLogger.logData(receivedItem.data);
+            delete receivedItem.data;
         }
     }
 }

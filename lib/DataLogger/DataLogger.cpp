@@ -60,75 +60,62 @@ void DataLogger::begin()
     cardSize = SD.cardSize() / (1024 * 1024);
     logger.logPrintF(LogSeverity::INFO, MODULE, "SD Card Size: %lluMB\n", cardSize);
 
-    file = SD.open(logFilePath, FILE_APPEND, true);
     logger.logPrintF(LogSeverity::INFO, MODULE, "Module init OK");
     initialized = true;
 }
 
-void DataLogger::logData(const uint64_t unixTimestamp, const GpsData &gpsData)
+void DataLogger::logData(DataLoggable *data)
 {
     if (!initialized)
     {
-        logger.logPrintF(LogSeverity::ERROR, MODULE, "log GPS data error - SD not initialized");
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "log data error - SD not initialized");
         return;
     }
-    char line[300];
-    size_t len = sprintf(line, "%ull;%u;%u;%f;%f;%f;%f;%ull\r\n",
-                         unixTimestamp,
-                         gpsData.mode,
-                         gpsData.satellites,
-                         gpsData.latitude,
-                         gpsData.longitude,
-                         gpsData.altitude,
-                         gpsData.speed,
-                         gpsData.unixTimestamp);
-    size_t savedLen = file.write((uint8_t *)line, len);
-    if (savedLen == len)
+
+    String path = logPathPrefix + data->logItem() + ".csv";
+    auto *file = getFile(path);
+
+    if (file == nullptr)
     {
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Logged GPS data");
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "log data error - File error");
+        return;
+    }
+
+    size_t savedLen = file->write((uint8_t *)data->logData().c_str(), data->logData().length());
+
+    file->flush();
+
+    if (savedLen == data->logData().length())
+    {
+        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Logged data");
     }
     else
     {
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS data log error");
+        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Data log error");
     }
-    saveData();
 }
 
-void DataLogger::logData(const uint64_t unixTimestamp, const JaaleeData &jaaleeData)
+fs::File *DataLogger::getFile(String &path)
 {
     if (!initialized)
     {
-        logger.logPrintF(LogSeverity::ERROR, MODULE, "log GPS data error - SD not initialized");
-        return;
+        return nullptr;
     }
-    char line[200];
-    size_t len = sprintf(line, "%ull;%f;%f;%f;%d\r\n",
-                         unixTimestamp,
-                         jaaleeData.temperature,
-                         jaaleeData.humidity,
-                         jaaleeData.battery,
-                         jaaleeData.rssi);
-    size_t savedLen = file.write((uint8_t *)line, len);
-    if (savedLen == len)
+    for (auto *filePathData : pathFiles)
     {
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Logged Jaalee data");
+        if (filePathData->path.compareTo(path) == 0)
+        {
+            return &filePathData->file;
+        }
     }
-    else
-    {
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Jaalee data log error");
-    }
-    saveData();
-}
 
-void DataLogger::saveData()
-{
-    linesToSave++;
+    auto *fpData = new PathFileData{
+        .path = path,
+        .file = SD.open(path.c_str(), FILE_APPEND, true),
+    };
+    pathFiles.push_back(fpData);
 
-    if (linesToSave > 0)
-    {
-        file.flush();
-        linesToSave = 0;
+    logger.logPrintF(LogSeverity::INFO, MODULE, "Opened new file %s", path.c_str());
 
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "File flushed");
-    }
+    return &fpData->file;
 }

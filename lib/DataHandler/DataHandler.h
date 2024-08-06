@@ -7,7 +7,7 @@
 class DataHandler
 {
 public:
-    static void handleJaaleeTemperatureData(const JaaleeData &data, const uint8_t bluetoothDeviceId);
+    static void handleJaaleeTemperatureData(const JaaleeData &data);
     static void handleGpsData(const GpsData &gpsData);
 
 private:

@@ -183,7 +183,7 @@ void GpsController::handleGpsData(const GpsData &gpsData)
 
 void GpsController::publishNewData(const GpsData &gpsData)
 {
-    lastPublishedData = gpsData;
+    lastPublishedData = GpsData(gpsData);
     lastShotTimestamp = millis();
     DataHandler::handleGpsData(gpsData);
 }

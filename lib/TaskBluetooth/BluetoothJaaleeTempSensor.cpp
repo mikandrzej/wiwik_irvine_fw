@@ -2,6 +2,7 @@
 #include <Logger.h>
 #include <IrvineConfiguration.h>
 #include <DataHandler.h>
+#include <Device.h>
 
 const char MODULE[] = "JAALEE";
 
@@ -76,9 +77,9 @@ void BluetoothJaaleeTempSensor::parseAdvertisedData(const uint8_t *const data, c
 
     if (doNotify)
     {
-        logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f\% rssi: %d", configIndex, temperature, humidity, battery, rssi);
+        logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f%% rssi: %d", configIndex, temperature, humidity, battery, rssi);
 
-        DataHandler::handleJaaleeTemperatureData({temperature, humidity, battery, rssi}, configIndex);
+        DataHandler::handleJaaleeTemperatureData({device.getUnixTimestamp(), configIndex, temperature, humidity, battery, rssi});
 
         lastTemperature = temperature;
         lastHumidity = humidity;
