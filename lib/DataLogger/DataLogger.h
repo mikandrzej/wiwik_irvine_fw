@@ -25,12 +25,13 @@ class DataLogger
 {
 public:
     void begin();
-
     void logData(DataLoggable *data);
 
-    fs::File *getFile(String &path);
+    PathFileData *getFileData(String &path);
+
 
 private:
+    void reopenFile(PathFileData *fileData);
     String logPathPrefix = "/log/";
 
     int linesToSave = {0};

@@ -79,7 +79,8 @@ void BluetoothJaaleeTempSensor::parseAdvertisedData(const uint8_t *const data, c
     {
         logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f%% rssi: %d", configIndex, temperature, humidity, battery, rssi);
 
-        DataHandler::handleJaaleeTemperatureData({device.getUnixTimestamp(), configIndex, temperature, humidity, battery, rssi});
+        auto data = JaaleeData(device.getUnixTimestamp(), configIndex, temperature, humidity, battery, rssi);
+        DataHandler::handleJaaleeTemperatureData(data);
 
         lastTemperature = temperature;
         lastHumidity = humidity;
