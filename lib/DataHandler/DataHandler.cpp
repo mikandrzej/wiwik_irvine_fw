@@ -62,7 +62,7 @@ void DataHandler::handleGpsData(const GpsData &gpsData)
 
     char msg[500];
     sprintf(msg, R"({"gt":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"spd":%.2f,"sat":%d,"t":%llu})",
-            gpsData.unixTimestamp,
+            gpsData.gpsUnixTimestamp,
             gpsData.longitude,
             gpsData.latitude,
             gpsData.altitude,

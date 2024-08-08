@@ -138,7 +138,7 @@ void IrvineConfiguration::loadGpsConfig()
     gps.minimumDistance = preferences.getUInt("gps.minimumDistance");
     gps.maxInterval = preferences.getUInt("gps.maxInterval");
     gps.sleepAfterIgnitionOffTimeout = preferences.getUInt("gps.sleepAfterIgnitionOffTimeout");
-    gps.freezePositionDuringStopSource = preferences.getUChar("gps.freezePositionDuringStopSource");
+    gps.freezePositionDuringStop = preferences.getUChar("gps.freezePositionDuringStop");
     gps.movementSpeedThreshold = preferences.getUInt("gps.movementSpeedThreshold");
     gps.movementStopDelay = preferences.getUInt("gps.movementStopDelay");
     gps.movementLogInterval = preferences.getUInt("gps.movementLogInterval");
@@ -253,7 +253,7 @@ void IrvineConfiguration::printConfiguration()
     gpsObj["minimumDistance"] = gps.minimumDistance;
     gpsObj["maxInterval"] = gps.maxInterval;
     gpsObj["sleepAfterIgnitionOffTimeout"] = gps.sleepAfterIgnitionOffTimeout;
-    gpsObj["freezePositionDuringStopSource"] = gps.freezePositionDuringStopSource;
+    gpsObj["freezePositionDuringStop"] = gps.freezePositionDuringStop;
     gpsObj["movementSpeedThreshold"] = gps.movementSpeedThreshold;
     gpsObj["movementStopDelay"] = gps.movementStopDelay;
     gpsObj["movementLogInterval"] = gps.movementLogInterval;

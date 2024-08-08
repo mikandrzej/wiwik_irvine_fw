@@ -8,7 +8,7 @@ public:
     uint32_t minimumDistance = 0u;
     uint32_t maxInterval = 0u;
     uint32_t sleepAfterIgnitionOffTimeout = 0u;
-    uint8_t freezePositionDuringStopSource = 0u; // 0: distance, 1: accelerometer, 2: CAN speed
+    bool freezePositionDuringStop = false;
     uint32_t movementSpeedThreshold = 0u;
     uint32_t movementStopDelay = 0u;
     uint32_t movementLogInterval = 0u;

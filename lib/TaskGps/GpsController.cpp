@@ -4,6 +4,7 @@
 #include <DataHandler.h>
 #include <Logger.h>
 #include <IrvineConfiguration.h>
+#include <Device.h>
 
 #include "EgTinyGsm.h"
 #include <TimeLib.h>
@@ -74,6 +75,11 @@ void GpsController::loop()
     }
 }
 
+bool GpsController::isMoving()
+{
+    return moving;
+}
+
 void GpsController::parseGpsData(const String &data)
 {
     if (data.length() < 20)
@@ -135,7 +141,7 @@ void GpsController::parseGpsData(const String &data)
     tm.Minute = minute;
     tm.Second = second;
 
-    uint64_t unixTimestamp = makeTime(tm);
+    uint64_t gpsUnixTimestamp = makeTime(tm);
 
     double altitude = getNextSubstring(data, ',', &iterator).toDouble();
     double speed_knots = getNextSubstring(data, ',', &iterator).toDouble();
@@ -144,7 +150,11 @@ void GpsController::parseGpsData(const String &data)
     (void)getNextSubstring(data, ',', &iterator);
     (void)getNextSubstring(data, ',', &iterator);
 
-    handleGpsData({mode, satellites, latitude, longitude, altitude, speed, unixTimestamp});
+    uint64_t unixTimestamp = device.getUnixTimestamp();
+
+    GpsData gpsData(mode, satellites, latitude, longitude, altitude, speed, gpsUnixTimestamp, unixTimestamp);
+
+    handleGpsData(gpsData);
 }
 
 void GpsController::handleGpsData(const GpsData &gpsData)
@@ -165,17 +175,39 @@ void GpsController::handleGpsData(const GpsData &gpsData)
     }
     else
     {
-        const uint32_t diff = millis() - lastShotTimestamp;
-        if (diff >= irvineConfiguration.gps.maxInterval)
+        float distance = getDistanceFromLastShot(gpsData);
+        logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS distance from last shot: %.1f", distance);
+        if (distance >= irvineConfiguration.gps.minimumDistance)
+        {
+            moving = true;
+        }
+        else
+        {
+            moving = false;
+        }
+
+        if (moving)
         {
             publishNewData(gpsData);
         }
         else
         {
-            float distance = getDistanceFromLastShot(gpsData);
-            if (distance >= irvineConfiguration.gps.minimumDistance)
+            const uint32_t diff = millis() - lastShotTimestamp;
+            if (diff >= irvineConfiguration.gps.maxInterval)
             {
-                publishNewData(gpsData);
+                if (irvineConfiguration.gps.freezePositionDuringStop)
+                {
+                    GpsData tempData = lastPublishedData;
+                    lastPublishedData = gpsData;
+                    lastPublishedData.altitude = tempData.altitude;
+                    lastPublishedData.latitude = tempData.latitude;
+                    lastPublishedData.longitude = tempData.longitude;
+                    publishNewData(lastPublishedData);
+                }
+                else
+                {
+                    publishNewData(gpsData);
+                }
             }
         }
     }

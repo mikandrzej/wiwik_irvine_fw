@@ -14,6 +14,7 @@ public:
             double longitude,
             double altitude,
             double speed,
+            uint64_t gpsUnixTimestamp,
             uint64_t unixTimestamp);
     uint8_t mode = 0u;
     uint8_t satellites = 0u;
@@ -21,7 +22,7 @@ public:
     double longitude = 0.0;
     double altitude = 0.0;
     double speed = 0.0;
-    uint64_t unixTimestamp = 0u;
+    uint64_t gpsUnixTimestamp = 0u;
 
     String logData()
     {
@@ -34,7 +35,7 @@ public:
                       longitude,
                       altitude,
                       speed,
-                      unixTimestamp);
+                      gpsUnixTimestamp);
         return String(txt);
     }
     String logItem() { return "gps"; }

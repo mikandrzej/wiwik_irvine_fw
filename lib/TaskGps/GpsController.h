@@ -14,6 +14,7 @@ class GpsController
 {
 public:
     void loop();
+    bool isMoving();
 
 private:
     void parseGpsData(const String &data);
@@ -29,6 +30,8 @@ private:
     bool firstShot = true;
     GpsData lastPublishedData;
     uint32_t lastShotTimestamp = 0u;
+
+    bool moving = false;
 };
 
 extern GpsController gpsController;
