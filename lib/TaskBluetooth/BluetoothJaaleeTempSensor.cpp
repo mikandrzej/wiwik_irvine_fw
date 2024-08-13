@@ -45,7 +45,7 @@ void BluetoothJaaleeTempSensor::parseAdvertisedData(const uint8_t *const data, c
         doNotify = true;
         firstRead = false;
     }
-    else if ((currTimestamp - lastShotTimestamp) >= irvineConfiguration.bluetooth.devices[configIndex].maxInterval)
+    else if ((currTimestamp - lastShotTimestamp) >= irvineConfiguration.bluetooth.devices[configIndex].minInterval)
     {
         doNotify = true;
     }

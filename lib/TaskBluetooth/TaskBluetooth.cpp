@@ -14,6 +14,7 @@
 
 #include "AbstractBluetoothBleDevice.h"
 #include "BluetoothJaaleeTempSensor.h"
+#include "BluetoothM52PASTempSensor.h"
 
 const char MODULE[] = "TASK_BT";
 static esp_ble_scan_params_t ble_scan_params = {
@@ -22,7 +23,7 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
     .scan_interval = 0x1000,
     .scan_window = 0x1000,
-    .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE};
+    .scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE};
 
 class TaskBluetooth
 {
@@ -30,6 +31,7 @@ public:
     void setup();
     void loop();
     void parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len, int16_t rssi);
+    void logDiscoveredDevice(const uint8_t *const mac, const uint8_t *const data, const uint8_t len, int rssi);
 
 private:
     std::vector<AbstractBluetoothBleDevice *> devices;
@@ -144,6 +146,7 @@ static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_
                     bluetoothTaskData.parseAdvertisedData(k, scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len, scan_result->scan_rst.rssi);
                 }
             }
+            bluetoothTaskData.logDiscoveredDevice((uint8_t *)scan_result->scan_rst.bda, scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len, scan_result->scan_rst.rssi);
 
             break;
         }
@@ -180,6 +183,10 @@ void TaskBluetooth::setup()
             // todo shared pointer
             devices.push_back(new BluetoothJaaleeTempSensor(dev));
             break;
+        case BluetoothDeviceType::M52PAS_SENSOR:
+            // todo shared pointer
+            devices.push_back(new BluetoothM52PASTempSensor(dev));
+            break;
         default:
             devices.push_back(nullptr);
             break;
@@ -194,4 +201,26 @@ void TaskBluetooth::loop()
 void TaskBluetooth::parseAdvertisedData(const uint16_t deviceIndex, const uint8_t *const data, const uint16_t len, int16_t rssi)
 {
     devices[deviceIndex]->parseAdvertisedData(data, len, rssi);
+}
+
+void TaskBluetooth::logDiscoveredDevice(const uint8_t *const mac, const uint8_t *const data, const uint8_t len, int rssi)
+{
+    return;
+
+    char txt[500];
+    int txt_len = sprintf(txt, "BLE device (RSSI=%d): ", rssi);
+    for (uint16_t k = 0u; k < 6u; k++)
+    {
+        if (k > 0u)
+            txt[txt_len++] = ':';
+        txt_len += sprintf(&txt[txt_len], "%02X", mac[k]);
+    }
+    txt_len += sprintf(&txt[txt_len], " data(%u):", len);
+
+    for (uint16_t k = 0u; k < len; k++)
+    {
+        txt_len += sprintf(&txt[txt_len], "%02X", data[k]);
+    }
+
+    logger.logPrintF(LogSeverity::DEBUG, MODULE, txt);
 }

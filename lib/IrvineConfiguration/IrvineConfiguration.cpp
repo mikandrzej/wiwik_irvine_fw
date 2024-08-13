@@ -35,9 +35,8 @@ bool IrvineConfiguration::begin()
     bluetooth.devices[0].macAddress[3] = 0x91;
     bluetooth.devices[0].macAddress[4] = 0x15;
     bluetooth.devices[0].macAddress[5] = 0x78;
-
     bluetooth.devices[0].type = BluetoothDeviceType::JAALEE_SENSOR;
-    bluetooth.devices[0].maxInterval = 10000u;
+    bluetooth.devices[0].minInterval = 10000u;
 
     bluetooth.devices[1].macAddress[0] = 0xE5;
     bluetooth.devices[1].macAddress[1] = 0x8B;
@@ -45,9 +44,44 @@ bool IrvineConfiguration::begin()
     bluetooth.devices[1].macAddress[3] = 0xEC;
     bluetooth.devices[1].macAddress[4] = 0xC3;
     bluetooth.devices[1].macAddress[5] = 0xA8;
-    
     bluetooth.devices[1].type = BluetoothDeviceType::JAALEE_SENSOR;
-    bluetooth.devices[1].maxInterval = 10000u;
+    bluetooth.devices[1].minInterval = 10000u;
+
+    bluetooth.devices[2].macAddress[0] = 0xE8;
+    bluetooth.devices[2].macAddress[1] = 0xD0;
+    bluetooth.devices[2].macAddress[2] = 0x4B;
+    bluetooth.devices[2].macAddress[3] = 0x01;
+    bluetooth.devices[2].macAddress[4] = 0xA6;
+    bluetooth.devices[2].macAddress[5] = 0xDC;
+    bluetooth.devices[2].type = BluetoothDeviceType::M52PAS_SENSOR;
+    bluetooth.devices[2].minInterval = 10000u;
+
+    bluetooth.devices[3].macAddress[0] = 0xF2;
+    bluetooth.devices[3].macAddress[1] = 0x83;
+    bluetooth.devices[3].macAddress[2] = 0x23;
+    bluetooth.devices[3].macAddress[3] = 0xF8;
+    bluetooth.devices[3].macAddress[4] = 0x6A;
+    bluetooth.devices[3].macAddress[5] = 0x9D;
+    bluetooth.devices[3].type = BluetoothDeviceType::M52PAS_SENSOR;
+    bluetooth.devices[3].minInterval = 10000u;
+
+    bluetooth.devices[4].macAddress[0] = 0xF7;
+    bluetooth.devices[4].macAddress[1] = 0xAE;
+    bluetooth.devices[4].macAddress[2] = 0x34;
+    bluetooth.devices[4].macAddress[3] = 0xE2;
+    bluetooth.devices[4].macAddress[4] = 0xA5;
+    bluetooth.devices[4].macAddress[5] = 0xE7;
+    bluetooth.devices[4].type = BluetoothDeviceType::M52PAS_SENSOR;
+    bluetooth.devices[4].minInterval = 10000u;
+
+    bluetooth.devices[5].macAddress[0] = 0xE8;
+    bluetooth.devices[5].macAddress[1] = 0xE6;
+    bluetooth.devices[5].macAddress[2] = 0x37;
+    bluetooth.devices[5].macAddress[3] = 0x56;
+    bluetooth.devices[5].macAddress[4] = 0xD5;
+    bluetooth.devices[5].macAddress[5] = 0xD2;
+    bluetooth.devices[5].type = BluetoothDeviceType::JAALEE_SENSOR;
+    bluetooth.devices[5].minInterval = 10000u;
 
     uint8_t mac[6];
     WiFi.macAddress(mac);

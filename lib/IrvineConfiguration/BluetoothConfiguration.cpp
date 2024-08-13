@@ -4,7 +4,7 @@
 
 bool BluetoothConfiguration::setMaxInterval(const uint32_t interval)
 {
-    devices[0].maxInterval = interval;
+    devices[0].minInterval = interval;
     return true;
 }
 
