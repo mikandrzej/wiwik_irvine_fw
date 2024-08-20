@@ -102,6 +102,10 @@ bool IrvineConfiguration::begin()
     gps.maxInterval = 60000u;
     gps.minimumDistance = 100u;
 
+    obd.speedActive = true;
+    obd.speedInterval = 1000u;
+    obd.protocolType = ObdProtocolType::AA_AT_THE_END;
+
     printConfiguration();
 
     return true;
@@ -185,10 +189,7 @@ void IrvineConfiguration::loadGpsConfig()
 
 void IrvineConfiguration::loadObdConfig()
 {
-    // Add specific loading instructions for each OBD parameter
-    // Placeholder example for protocol
-    obd.protocol = preferences.getUChar("obd.protocol");
-    // Add the rest of the parameters similarly
+    obd.protocolType = static_cast<ObdProtocolType>(preferences.getUChar("obd.protocol"));
 }
 
 void IrvineConfiguration::loadDeviceConfig()
@@ -297,17 +298,26 @@ void IrvineConfiguration::printConfiguration()
     gpsObj["jammingDetection"] = gps.jammingDetection;
 
     JsonObject obdObj = doc.createNestedObject("obd");
-    obdObj["protocol"] = obd.protocol;
-    obdObj["speed"] = obd.speed;
-    obdObj["engineSpeed"] = obd.engineSpeed;
-    obdObj["voltage"] = obd.voltage;
-    obdObj["fuelLevel"] = obd.fuelLevel;
-    obdObj["VIN"] = obd.VIN;
-    obdObj["activeDTC"] = obd.activeDTC;
-    obdObj["oilTemperature"] = obd.oilTemperature;
-    obdObj["coolantTemperature"] = obd.coolantTemperature;
-    obdObj["throttlePosition"] = obd.throttlePosition;
-    obdObj["odometer"] = obd.odometer;
+    obdObj["speedActive"] = obd.speedActive;
+    obdObj["speedInterval"] = obd.speedInterval;
+    obdObj["engineSpeedActive"] = obd.engineSpeedActive;
+    obdObj["engineSpeedInterval"] = obd.engineSpeedInterval;
+    obdObj["voltageActive"] = obd.voltageActive;
+    obdObj["voltageInterval"] = obd.voltageInterval;
+    obdObj["fuelLevelActive"] = obd.fuelLevelActive;
+    obdObj["fuelLevelInterval"] = obd.fuelLevelInterval;
+    obdObj["VINActive"] = obd.VINActive;
+    obdObj["VINInterval"] = obd.VINInterval;
+    obdObj["activeDTCActive"] = obd.activeDTCActive;
+    obdObj["activeDTCInterval"] = obd.activeDTCInterval;
+    obdObj["oilTemperatureActive"] = obd.oilTemperatureActive;
+    obdObj["oilTemperatureInterval"] = obd.oilTemperatureInterval;
+    obdObj["coolantTemperatureActive"] = obd.coolantTemperatureActive;
+    obdObj["coolantTemperatureInterval"] = obd.coolantTemperatureInterval;
+    obdObj["throttlePositionActive"] = obd.throttlePositionActive;
+    obdObj["throttlePositionInterval"] = obd.throttlePositionInterval;
+    obdObj["odometerActive"] = obd.odometerActive;
+    obdObj["odometerInterval"] = obd.odometerInterval;
 
     JsonObject deviceObj = doc.createNestedObject("device");
     deviceObj["batteryInterval"] = device.batteryInterval;

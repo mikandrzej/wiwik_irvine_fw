@@ -14,7 +14,7 @@ JaaleeData::JaaleeData(
                     temperature(temperature),
                     humidity(humidity),
                     battery(battery),
-                    rssi(rssi)
+                    rssi(rssi),
+                    unixTimestamp(unixTimestamp)
 {
-    DataLoggable::unixTimestamp = unixTimestamp;
 }

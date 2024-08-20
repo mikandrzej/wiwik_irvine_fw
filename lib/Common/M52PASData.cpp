@@ -14,7 +14,7 @@ M52PASData::M52PASData(
                     temperature(temperature),
                     humidity(humidity),
                     battery(battery),
-                    rssi(rssi)
+                    rssi(rssi),
+                    unixTimestamp(unixTimestamp)
 {
-    DataLoggable::unixTimestamp = unixTimestamp;
 }

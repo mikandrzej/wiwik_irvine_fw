@@ -18,8 +18,8 @@ public:
 
 private:
     void parseGpsData(const String &data);
-    void handleGpsData(const GpsData &gpsData);
-    void publishNewData(const GpsData &gpsData);
+    void handleGpsData(GpsData &gpsData);
+    void publishNewData(GpsData &gpsData);
     String getNextSubstring(const String &input, char separator, int *iterator);
 
     float degreesToRadians(float degree);

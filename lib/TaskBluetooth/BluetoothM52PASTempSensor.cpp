@@ -95,7 +95,7 @@ void BluetoothM52PASTempSensor::parseAdvertisedData(const uint8_t *const data, c
         logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f%% rssi: %d", configIndex, temperature, humidity, battery, rssi);
 
         auto data = M52PASData(device.getUnixTimestamp(), configIndex, temperature, humidity, battery, rssi);
-        DataHandler::handleM52PASTemperatureData(data);
+        DataHandler::handleData(data);
 
         lastTemperature = temperature;
         lastHumidity = humidity;

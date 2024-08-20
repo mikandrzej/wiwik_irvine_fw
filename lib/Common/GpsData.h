@@ -23,12 +23,13 @@ public:
     double altitude = 0.0;
     double speed = 0.0;
     uint64_t gpsUnixTimestamp = 0u;
+    uint64_t unixTimestamp = 0u;
 
     String logData()
     {
         char txt[200];
         (void)sprintf(txt, "%llu;%u;%u;%f;%f;%f;%f;%llu\r\n",
-                      DataLoggable::unixTimestamp,
+                      unixTimestamp,
                       mode,
                       satellites,
                       latitude,
@@ -39,4 +40,18 @@ public:
         return String(txt);
     }
     String logItem() { return "gps"; }
+    String logMqttData()
+    {
+        char msg[500];
+        sprintf(msg, R"({"gt":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"spd":%.2f,"sat":%d,"t":%llu})",
+                gpsUnixTimestamp,
+                longitude,
+                latitude,
+                altitude,
+                speed,
+                satellites,
+                unixTimestamp);
+
+        return String(msg);
+    }
 };

@@ -15,8 +15,8 @@ GpsData::GpsData(uint8_t mode,
                                            longitude(longitude),
                                            altitude(altitude),
                                            speed(speed),
-                                           gpsUnixTimestamp(gpsUnixTimestamp)
+                                           gpsUnixTimestamp(gpsUnixTimestamp),
+                                           unixTimestamp(unixTimestamp)
 
 {
-    DataLoggable::unixTimestamp = unixTimestamp;
 }

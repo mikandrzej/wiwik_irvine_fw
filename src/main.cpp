@@ -23,6 +23,8 @@
 #include <TaskGps.h>
 #include <HwConfiguration.h>
 
+#include <TaskCan.h>
+
 #define TIMER0_INTERVAL_MS 1000
 
 uint32_t software_version = 5u;
@@ -47,6 +49,11 @@ StaticTask_t xDataLoggerTaskBuffer;
 StackType_t xDataLoggerStack[GPS_TASK_STACK_SIZE];
 TaskHandle_t xDataLoggerTaskHandle = NULL;
 
+#define CAN_TASK_STACK_SIZE 4096
+StaticTask_t xCanTaskBuffer;
+StackType_t xCanStack[GPS_TASK_STACK_SIZE];
+TaskHandle_t xCanTaskHandle = NULL;
+
 void setup()
 {
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
@@ -62,9 +69,9 @@ void setup()
   pinMode(BOARD_CAN_SE_PIN, OUTPUT);
   digitalWrite(BOARD_CAN_SE_PIN, LOW);
 
-  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)BOARD_CAN_TX_PIN, (gpio_num_t)BOARD_CAN_RX_PIN, TWAI_MODE_NORMAL);
+  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)BOARD_CAN_TX_PIN, (gpio_num_t)BOARD_CAN_RX_PIN, TWAI_MODE_NO_ACK);
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
-  twai_filter_config_t f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
+  twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
   if (twai_driver_install(&g_config, &t_config, &f_config) != ESP_OK)
   {
@@ -78,8 +85,6 @@ void setup()
   }
 
   Serial.printf("Software version: %u\r\n", software_version);
-
-  // service.begin();
 
   xBleTaskHandle = xTaskCreateStaticPinnedToCore(
       mqttControllerTask,   /* Function that implements the task. */
@@ -119,6 +124,16 @@ void setup()
       tskIDLE_PRIORITY,            /* Priority at which the task is created. */
       xDataLoggerStack,            /* Array to use as the task's stack. */
       &xDataLoggerTaskBuffer,
+      1); /* Variable to hold the task's data structure. */
+
+  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
+      taskCan,              /* Function that implements the task. */
+      "CAN",                  /* Text name for the task. */
+      CAN_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+      (void *)1,                   /* Parameter passed into the task. */
+      tskIDLE_PRIORITY,            /* Priority at which the task is created. */
+      xCanStack,            /* Array to use as the task's stack. */
+      &xCanTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 }
 

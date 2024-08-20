@@ -157,7 +157,7 @@ void GpsController::parseGpsData(const String &data)
     handleGpsData(gpsData);
 }
 
-void GpsController::handleGpsData(const GpsData &gpsData)
+void GpsController::handleGpsData(GpsData &gpsData)
 {
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Gps data mode:%u, sat:%u, %f %f %f, speed:%f, timestamp: %llu",
                      gpsData.mode,
@@ -213,11 +213,11 @@ void GpsController::handleGpsData(const GpsData &gpsData)
     }
 }
 
-void GpsController::publishNewData(const GpsData &gpsData)
+void GpsController::publishNewData(GpsData &gpsData)
 {
     lastPublishedData = GpsData(gpsData);
     lastShotTimestamp = millis();
-    DataHandler::handleGpsData(gpsData);
+    DataHandler::handleData(gpsData);
 }
 
 String GpsController::getNextSubstring(const String &input, char separator, int *iterator)

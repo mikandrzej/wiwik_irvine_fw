@@ -20,11 +20,13 @@ public:
     float humidity = 0.0f;
     float battery = 0.0f;
     int16_t rssi = 0;
+    uint64_t unixTimestamp = 0u;
+
     String logData()
     {
         char txt[200];
         (void)sprintf(txt, "%llu;%f;%f;%f;%d\r\n",
-                      DataLoggable::unixTimestamp,
+                      unixTimestamp,
                       temperature,
                       humidity,
                       battery,
@@ -42,5 +44,11 @@ public:
                 irvineConfiguration.bluetooth.devices[bleConfigId].macAddress[4],
                 irvineConfiguration.bluetooth.devices[bleConfigId].macAddress[5]);
         return String(txt);
+    }
+    String logMqttData()
+    {
+        char msg[100];
+        sprintf(msg, R"({"temp":%.2f,"hum":%.2f,"bat":%.0f,"rssi":%d,"t":%llu})", temperature, humidity, battery, rssi, unixTimestamp);
+        return String(msg);
     }
 };
