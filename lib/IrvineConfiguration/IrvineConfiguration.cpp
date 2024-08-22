@@ -93,7 +93,6 @@ bool IrvineConfiguration::begin()
     sprintf(server.mqttUsername, "root");
     sprintf(server.mqttPassword, "password");
 
-    modem.reportInterval = 10000u;
     sprintf(modem.pin, "4967");
     sprintf(modem.apn, "internet");
     sprintf(modem.apnUsername, "internet");

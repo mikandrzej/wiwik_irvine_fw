@@ -9,10 +9,10 @@
 
 const char MODULE[] = "D_LOGGER";
 
-#define DATA_LOGGER_QUEUE_LENGTH 10
+#define DATA_LOGGER_QUEUE_LENGTH 5
 #define DATA_LOGGER_ITEM_SIZE sizeof(DataLoggerQueueItem)
-static uint8_t dataLoggerQueueBuffer[DATA_LOGGER_QUEUE_LENGTH * DATA_LOGGER_ITEM_SIZE];
-static StaticQueue_t dataLoggerStaticQueue;
+// static uint8_t dataLoggerQueueBuffer[DATA_LOGGER_QUEUE_LENGTH * DATA_LOGGER_ITEM_SIZE];
+// static StaticQueue_t dataLoggerStaticQueue;
 QueueHandle_t dataLoggerQueue;
 
 DataLogger dataLogger;
@@ -20,12 +20,13 @@ DataLogger dataLogger;
 void DataLogger::begin()
 {
     /* Create a queue capable of containing 10 uint64_t values. */
-    dataLoggerQueue = xQueueCreateStatic(DATA_LOGGER_QUEUE_LENGTH,
-                                         DATA_LOGGER_ITEM_SIZE,
-                                         dataLoggerQueueBuffer,
-                                         &dataLoggerStaticQueue);
+    // dataLoggerQueue = xQueueCreateStatic(DATA_LOGGER_QUEUE_LENGTH,
+    //                                      DATA_LOGGER_ITEM_SIZE,
+    //                                      dataLoggerQueueBuffer,
+    //                                      &dataLoggerStaticQueue);
+    dataLoggerQueue = xQueueCreate(DATA_LOGGER_QUEUE_LENGTH, DATA_LOGGER_ITEM_SIZE);
 
-    if (!SD.begin(SD_CS_PIN, SPI))
+    if (!SD.begin(BOARD_SD_CS_PIN, SPI))
     {
         logger.logPrintF(LogSeverity::ERROR, MODULE, "SD init failed");
         return;
@@ -64,7 +65,7 @@ void DataLogger::begin()
     initialized = true;
 }
 
-void DataLogger::logData(DataLoggable *data)
+void DataLogger::logData(DataLoggerQueueItem &data)
 {
     if (!initialized)
     {
@@ -72,7 +73,7 @@ void DataLogger::logData(DataLoggable *data)
         return;
     }
 
-    String path = logPathPrefix + data->logItem() + ".csv";
+    String path = logPathPrefix + String(data.logItem) + ".csv";
     auto *fileData = getFileData(path);
 
     if (fileData == nullptr)
@@ -80,9 +81,9 @@ void DataLogger::logData(DataLoggable *data)
         logger.logPrintF(LogSeverity::ERROR, MODULE, "log data error - File error");
         return;
     }
-    uint32_t logDataLen = data->logData().length();
+    uint32_t logDataLen = strlen(data.logData);
 
-    size_t savedLen = fileData->file.write((uint8_t *)data->logData().c_str(), logDataLen);
+    size_t savedLen = fileData->file.write((uint8_t *)data.logData, logDataLen);
 
     fileData->file.flush();
 
@@ -96,7 +97,7 @@ void DataLogger::logData(DataLoggable *data)
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Data log error %d, logged: %d, expexted: %d", error, savedLen, logDataLen);
 
         reopenFile(fileData);
-        savedLen = fileData->file.write((uint8_t *)data->logData().c_str(), logDataLen);
+        savedLen = fileData->file.write((uint8_t *)data.logData, logDataLen);
         if (savedLen == logDataLen)
         {
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Save retry succeed");

@@ -131,7 +131,7 @@ void MqttController::subscribe(MqttSubscribedTopic *topic)
 
 void MqttController::publish(const char *const topic, const char *const msg, const bool retain)
 {
-    if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
+    if (xSemaphoreTake(modemSemaphore, 1) == pdTRUE)
     {
         mqtt->publish(topic, msg, retain);
         xSemaphoreGive(modemSemaphore);
@@ -140,7 +140,7 @@ void MqttController::publish(const char *const topic, const char *const msg, con
 
 void MqttController::publish(const char *const topic, const uint8_t *const msg, uint32_t len, const bool retain)
 {
-    if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
+    if (xSemaphoreTake(modemSemaphore, 1) == pdTRUE)
     {
         mqtt->publish(topic, msg, len, retain);
         xSemaphoreGive(modemSemaphore);

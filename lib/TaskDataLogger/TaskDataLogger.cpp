@@ -5,6 +5,7 @@
 
 #include <DataLogger.h>
 #include <Logger.h>
+#include <memory>
 
 const char MODULE[] = "DATA_LOG";
 
@@ -17,8 +18,7 @@ void taskDataLogger(void *)
                           &receivedItem,
                           pdMS_TO_TICKS(10000)) == pdPASS)
         {
-            dataLogger.logData(receivedItem.data);
-            delete receivedItem.data;
+            dataLogger.logData(receivedItem);
         }
     }
 }

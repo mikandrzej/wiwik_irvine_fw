@@ -84,6 +84,22 @@ void setup()
     return;
   }
 
+  // twai_message_t msg = {
+  //     .flags = 0u,
+  //     .identifier = 0x1234u,
+  //     .data_length_code = 8,
+  //     .data = {0},
+  // };
+
+  // msg.extd = 1;
+
+  // while (1)
+  // {
+  //   msg.data[0]++;
+
+  //   twai_transmit(&msg, 100);
+  // }
+
   Serial.printf("Software version: %u\r\n", software_version);
 
   xBleTaskHandle = xTaskCreateStaticPinnedToCore(
@@ -127,12 +143,12 @@ void setup()
       1); /* Variable to hold the task's data structure. */
 
   xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskCan,              /* Function that implements the task. */
-      "CAN",                  /* Text name for the task. */
+      taskCan,             /* Function that implements the task. */
+      "CAN",               /* Text name for the task. */
       CAN_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
-      (void *)1,                   /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,            /* Priority at which the task is created. */
-      xCanStack,            /* Array to use as the task's stack. */
+      (void *)1,           /* Parameter passed into the task. */
+      tskIDLE_PRIORITY,    /* Priority at which the task is created. */
+      xCanStack,           /* Array to use as the task's stack. */
       &xCanTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 }

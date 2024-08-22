@@ -4,16 +4,12 @@
 #include <IrvineConfiguration.h>
 #include <TimeLib.h>
 #include <Device.h>
+#include <HwConfiguration.h>
 
 const char MODULE[] = "MODEM_MNG";
 
 #define SerialAT Serial1
 #define MODEM_UART_BAUD 115200
-#define MODEM_PIN_TX 19
-#define MODEM_PIN_RX 18
-
-#define MODEM_PWR_PIN 21
-#define MODEM_RESET_PIN 16
 
 ModemManagement modemManagement;
 EgTinyGsm modem(SerialAT);
@@ -35,29 +31,29 @@ void ModemManagement::loop()
     switch (state)
     {
     case ModemManagementState::UNINITIALIZED:
-        SerialAT.begin(MODEM_UART_BAUD, SERIAL_8N1, MODEM_PIN_RX, MODEM_PIN_TX);
+        SerialAT.begin(MODEM_UART_BAUD, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
 
-        pinMode(MODEM_RESET_PIN, OUTPUT);
-        pinMode(MODEM_PWR_PIN, OUTPUT);
-        digitalWrite(MODEM_RESET_PIN, HIGH);
-        digitalWrite(MODEM_PWR_PIN, LOW);
+        pinMode(BOARD_MODEM_RESET_PIN, OUTPUT);
+        pinMode(BOARD_MODEM_PWR_PIN, OUTPUT);
+        digitalWrite(BOARD_MODEM_RESET_PIN, HIGH);
+        digitalWrite(BOARD_MODEM_PWR_PIN, LOW);
         state = ModemManagementState::POWER_OFF;
         break;
 
     case ModemManagementState::POWER_OFF:
     {
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem reset");
-        digitalWrite(MODEM_PWR_PIN, HIGH);
-        digitalWrite(MODEM_RESET_PIN, LOW);
+        digitalWrite(BOARD_MODEM_PWR_PIN, HIGH);
+        digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
         vTaskDelay(pdMS_TO_TICKS(100));
-        digitalWrite(MODEM_RESET_PIN, HIGH);
+        digitalWrite(BOARD_MODEM_RESET_PIN, HIGH);
         vTaskDelay(pdMS_TO_TICKS(1000));
-        digitalWrite(MODEM_RESET_PIN, LOW);
+        digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
 
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem power up");
-        digitalWrite(MODEM_PWR_PIN, HIGH);
+        digitalWrite(BOARD_MODEM_PWR_PIN, HIGH);
         vTaskDelay(pdMS_TO_TICKS(500));
-        digitalWrite(MODEM_PWR_PIN, LOW);
+        digitalWrite(BOARD_MODEM_PWR_PIN, LOW);
 
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem power up delay");
         vTaskDelay(pdMS_TO_TICKS(5000));
@@ -111,49 +107,6 @@ void ModemManagement::loop()
         simImsi = modem.getIMSI();
         logger.logPrintF(LogSeverity::INFO, MODULE, "SIM CCID: %s, SIM IMSI: %s", simCcid.c_str(), simImsi.c_str());
 
-        int yearNetwork;
-        int monthNetwork;
-        int dayNetwork;
-        int hourNetwork;
-        int minuteNetwork;
-        int secondNetwork;
-        float timezoneNetwork;
-        if (true == modem.getNetworkTime(
-                        &yearNetwork,
-                        &monthNetwork,
-                        &dayNetwork,
-                        &hourNetwork,
-                        &minuteNetwork,
-                        &secondNetwork,
-                        &timezoneNetwork))
-        {
-
-            tmElements_t tm;
-
-            tm.Day = dayNetwork;
-            tm.Month = monthNetwork;
-            tm.Year = yearNetwork - 1970;
-            tm.Hour = hourNetwork;
-            tm.Minute = minuteNetwork;
-            tm.Second = secondNetwork;
-
-            uint64_t unixTimestamp = makeTime(tm);
-
-            // offset timezone
-            unixTimestamp -= (int)timezoneNetwork * 60 * 60;
-            device.updateGsmTime(unixTimestamp);
-
-            logger.logPrintF(LogSeverity::DEBUG, MODULE, "time %d-%d-%d %d:%d:%d timezone %f unix:%llu",
-                             yearNetwork,
-                             monthNetwork,
-                             dayNetwork,
-                             hourNetwork,
-                             minuteNetwork,
-                             secondNetwork,
-                             timezoneNetwork,
-                             unixTimestamp);
-        }
-
         xSemaphoreGive(modemSemaphore);
 
         state = ModemManagementState::APN_DISCONNECTED;
@@ -164,6 +117,50 @@ void ModemManagement::loop()
         {
             if (modem.isNetworkConnected())
             {
+
+                int yearNetwork;
+                int monthNetwork;
+                int dayNetwork;
+                int hourNetwork;
+                int minuteNetwork;
+                int secondNetwork;
+                float timezoneNetwork;
+                if (true == modem.getNetworkTime(
+                                &yearNetwork,
+                                &monthNetwork,
+                                &dayNetwork,
+                                &hourNetwork,
+                                &minuteNetwork,
+                                &secondNetwork,
+                                &timezoneNetwork))
+                {
+
+                    tmElements_t tm;
+
+                    tm.Day = dayNetwork;
+                    tm.Month = monthNetwork;
+                    tm.Year = yearNetwork - 1970;
+                    tm.Hour = hourNetwork;
+                    tm.Minute = minuteNetwork;
+                    tm.Second = secondNetwork;
+
+                    uint64_t unixTimestamp = makeTime(tm);
+
+                    // offset timezone
+                    unixTimestamp -= (int)timezoneNetwork * 60 * 60;
+                    device.updateGsmTime(unixTimestamp);
+
+                    logger.logPrintF(LogSeverity::DEBUG, MODULE, "time %d-%d-%d %d:%d:%d timezone %f unix:%llu",
+                                     yearNetwork,
+                                     monthNetwork,
+                                     dayNetwork,
+                                     hourNetwork,
+                                     minuteNetwork,
+                                     secondNetwork,
+                                     timezoneNetwork,
+                                     unixTimestamp);
+                }
+
                 if (modem.gprsConnect(irvineConfiguration.modem.apn,
                                       irvineConfiguration.modem.apnUsername,
                                       irvineConfiguration.modem.apnPassword))

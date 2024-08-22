@@ -217,6 +217,7 @@ void GpsController::publishNewData(GpsData &gpsData)
 {
     lastPublishedData = GpsData(gpsData);
     lastShotTimestamp = millis();
+    
     DataHandler::handleData(gpsData);
 }
 

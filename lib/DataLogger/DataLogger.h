@@ -12,7 +12,9 @@
 
 typedef struct
 {
-    DataLoggable *data;
+    char logItem[50];
+    char logData[200];
+    char mqttData[200];
 } DataLoggerQueueItem;
 
 typedef struct
@@ -25,7 +27,7 @@ class DataLogger
 {
 public:
     void begin();
-    void logData(DataLoggable *data);
+    void logData(DataLoggerQueueItem &data);
 
     PathFileData *getFileData(String &path);
 

@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include <DataLoggable.h>
+#include <memory>
 
 class DataHandler
 {

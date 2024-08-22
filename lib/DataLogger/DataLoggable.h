@@ -5,7 +5,7 @@
 class DataLoggable
 {
 public:
-    virtual String logData() { return String(); };
-    virtual String logItem() { return String(); };
-    virtual String logMqttData() { return String(); };
+    virtual String logData()  =0;
+    virtual String logItem()  =0;
+    virtual String logMqttData() =0;
 };

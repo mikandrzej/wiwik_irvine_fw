@@ -1,6 +1,6 @@
 #include "TemperatureLogger.h"
 
-#define BOARD_SD_CS_PIN (13)
+#define BOARD_BOARD_SD_CS_PIN (13)
 
 bool TemperatureLogger::initialized = false;
 SemaphoreHandle_t TemperatureLogger::sdMutex = xSemaphoreCreateMutex();
@@ -11,7 +11,7 @@ bool TemperatureLogger::init(String sensorAddress)
     {
         return true;
     }
-    if (SD.begin(BOARD_SD_CS_PIN))
+    if (SD.begin(BOARD_BOARD_SD_CS_PIN))
     {
         Serial.println("SD initialized");
 
