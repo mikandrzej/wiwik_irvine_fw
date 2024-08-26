@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../CanQuery.h"
+#include "CanQuery.h"
 #include "IrvineConfiguration.h"
 
 #define UDS_SERVICE_CURR_DATA 1u
@@ -20,17 +20,18 @@ class UdsCurrDataQuery : public CanQuery
 public:
     UdsCurrDataQuery(uint8_t pid);
 
-    bool messageReceived(uint32_t id, bool extd, bool rtr, uint8_t dataLen, uint8_t *data);
-
-    virtual bool parseReceivedValue(uint8_t dataLen, uint8_t *data) = 0;
     void sendQuery();
-    void intervalElapsed() override;
 
 protected:
+    virtual bool parseCurrDataResponse(uint8_t dataLen, uint8_t *data) = 0;
+
     uint32_t queryId = 0u;
     uint8_t paddingChar;
     bool padding;
     uint8_t pid;
+    bool extd;
     uint32_t responseId;
 
+private:
+    bool parseReceivedFrame(twai_message_t &msg) override;
 };

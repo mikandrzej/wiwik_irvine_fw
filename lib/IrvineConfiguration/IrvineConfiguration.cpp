@@ -275,8 +275,8 @@ void IrvineConfiguration::printConfiguration()
 
     JsonObject vehicleObj = doc.createNestedObject("vehicle");
     vehicleObj["ignitionSource"] = vehicle.ignitionSource;
-    vehicleObj["movementDetectionSource"] = vehicle.movementDetectionSource;
-    vehicleObj["speedSource"] = vehicle.speedSource;
+    vehicleObj["movementDetectionSource"] = static_cast<int>(vehicle.movementDetectionSource);
+    vehicleObj["speedSource"] = static_cast<int>(vehicle.speedSource);
     vehicleObj["movementLogInterval"] = vehicle.movementLogInterval;
     vehicleObj["stopLogInterval"] = vehicle.stopLogInterval;
     vehicleObj["fuelLeakDetectionThreshold"] = vehicle.fuelLeakDetectionThreshold;

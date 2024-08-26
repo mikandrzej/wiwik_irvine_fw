@@ -1,36 +1,36 @@
 #include "CanQuery.h"
 
 #include <Logger.h>
+#include "../CanTxQueue.h"
 
 const char MODULE[] = "CAN_QUERY";
 
-void CanQuery::process(const uint32_t time)
+bool CanQuery::checkTxInterval()
 {
     bool shot = false;
 
-    if ((time - lastShotTimestamp) > interval)
+    if ((millis() - lastShotTimestamp) > getIntervalValue())
         shot = true;
-    if (first)
-    {
-        first = false;
-        shot = true;
-    }
+    shot |= first;
 
-    if (shot)
-    {
-        lastShotTimestamp = time;
-
-        intervalElapsed();
-    }
+    return shot;
 }
 
-void CanQuery::intervalElapsed()
+bool CanQuery::checkRxTimeout()
 {
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "Interval elapsed");
+    if (!waitingForResponse)
+        return false;
+    if ((millis() - lastResponseTimestamp) > getTimeoutValue())
+        return true;
+    return false;
 }
 
 void CanQuery::sendFrame(twai_message_t &msg)
 {
+    lastShotTimestamp = millis();
+    first = false;
+    waitingForResponse = true;
+
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Send frame id:%X data(%u):%02X%02X%02X%02X%02X%02X%02X%02X",
                      msg.identifier,
                      msg.data_length_code,
@@ -42,11 +42,15 @@ void CanQuery::sendFrame(twai_message_t &msg)
                      msg.data[5],
                      msg.data[6],
                      msg.data[7]);
-    if (sendCallback)
-        sendCallback(msg);
+    canTxQueue.push(msg);
 }
 
-void CanQuery::setSendCallback(SendCallback sendCallback)
+bool CanQuery::frameReceived(twai_message_t &msg)
 {
-    this->sendCallback = sendCallback;
+    if (parseReceivedFrame(msg))
+    {
+        lastResponseTimestamp = millis();
+
+        waitingForResponse = false;
+    }
 }

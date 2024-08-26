@@ -4,9 +4,8 @@
 #include <Logger.h>
 #include <DataLogger.h>
 
-#include <CanQueries/UdsCurrDataQueries/UdsVehicleSpeedQuery.h>
-
 #include <driver/twai.h>
+#include "CanTxQueue.h"
 
 const char MODULE[] = "CAN_MGR";
 
@@ -14,14 +13,14 @@ CanManager canManager;
 
 void CanManager::setup()
 {
-    if (irvineConfiguration.obd.speedActive)
-    {
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Added UDS Vehicle speed query");
-        auto query = new UdsVehicleSpeedQuery(irvineConfiguration.obd.speedInterval);
-        query->setSendCallback([this](twai_message_t &msg)
-                               { this->sendCallback(msg); });
-        canQueries.push_back(query);
-    }
+    // if (irvineConfiguration.obd.speedActive)
+    // {
+    //     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Added UDS Vehicle speed query");
+    //     auto query = new UdsVehicleSpeedQuery(irvineConfiguration.obd.speedInterval);
+    //     query->setSendCallback([this](twai_message_t &msg)
+    //                            { this->sendCallback(msg); });
+    //     canQueries.push_back(query);
+    // }
 }
 
 void CanManager::loop()
@@ -30,26 +29,30 @@ void CanManager::loop()
     twai_message_t rcvdMessage;
     bool messageRcvd = twai_receive(&rcvdMessage, 0u) == ESP_OK;
 
+    if(messageRcvd)
+    {
+        udsVehicleSpeedQuery.frameReceived(rcvdMessage);
+    }
+
+    udsVehicleSpeedQuery.loop();
+
     for (auto &query : canQueries)
     {
         if (messageRcvd)
         {
-            query->messageReceived(rcvdMessage.identifier,
-                                   rcvdMessage.extd,
-                                   rcvdMessage.rtr,
-                                   rcvdMessage.data_length_code,
-                                   rcvdMessage.data);
+            query->frameReceived(rcvdMessage);
         }
-        query->process(time);
+        query->loop();
     }
+
 
     if ((time - lastSentTimestamp) >= sendInterval)
     {
-        if (framesToSend.size() > 0)
+        if (canTxQueue.size() > 0)
         {
 
-            twai_message_t msgToSend = framesToSend.front();
-            framesToSend.pop();
+            twai_message_t msgToSend = canTxQueue.front();
+            canTxQueue.pop();
 
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "sending frame %X: (%u)%X%X%X%X%X%X%X%X. extd:%d",
                              msgToSend.identifier,
@@ -76,5 +79,6 @@ void CanManager::loop()
 void CanManager::sendCallback(twai_message_t &msg)
 {
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "sendCallback called");
-    framesToSend.push(msg);
+    canTxQueue.push(msg);
 }
+

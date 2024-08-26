@@ -21,38 +21,38 @@ UdsCurrDataQuery::UdsCurrDataQuery(uint8_t pid)
     }
 }
 
-bool UdsCurrDataQuery::messageReceived(uint32_t id, bool extd, bool rtr, uint8_t dataLen, uint8_t *data)
+bool UdsCurrDataQuery::parseReceivedFrame(twai_message_t &msg)
 {
-    if (id != responseId)
+    if (msg.identifier != responseId)
     {
-        logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid id %X", id);
+        logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid id %X", msg.identifier);
         return false;
     }
-    if (extd != this->extd)
+    if (msg.extd != this->extd)
     {
-        logger.logPrintF(LogSeverity::WARNING, MODULE, "Extd doesn't match %d", extd);
+        logger.logPrintF(LogSeverity::WARNING, MODULE, "Extd doesn't match %d", msg.extd);
         return false;
     }
-    if (rtr != this->rtr)
+    if (msg.rtr != false)
     {
-        logger.logPrintF(LogSeverity::WARNING, MODULE, "RTR doesn't match %d", rtr);
+        logger.logPrintF(LogSeverity::WARNING, MODULE, "RTR doesn't match %d", msg.rtr);
         return false;
     }
 
-    UdsFrame *frame = (UdsFrame *)data;
+    UdsFrame *frame = (UdsFrame *)msg.data;
     if (padding)
     {
-        if (dataLen != 8u)
+        if (msg.data_length_code != 8u)
         {
-            logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid data length %d", dataLen);
+            logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid data length %d", msg.data_length_code);
             return false;
         }
     }
-    else if (dataLen >= 3u)
+    else if (msg.data_length_code >= 3u)
     {
-        if (frame->additionalBytes + 1u != dataLen)
+        if (frame->additionalBytes + 1u != msg.data_length_code)
         {
-            logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid data length %d with additional bytes %d", dataLen, frame->additionalBytes);
+            logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid data length %d with additional bytes %d", msg.data_length_code, frame->additionalBytes);
             return false;
         }
     }
@@ -69,7 +69,7 @@ bool UdsCurrDataQuery::messageReceived(uint32_t id, bool extd, bool rtr, uint8_t
 
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Received correct message PID:%X", pid);
 
-    return parseReceivedValue(frame->additionalBytes - 2u, frame->data);
+    return parseCurrDataResponse(frame->additionalBytes - 2u, frame->data);
 }
 
 void UdsCurrDataQuery::sendQuery()
@@ -94,10 +94,4 @@ void UdsCurrDataQuery::sendQuery()
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "send Query PID:%X", pid);
         break;
     }
-}
-
-void UdsCurrDataQuery::intervalElapsed()
-{
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "Interval elapsed");
-    sendQuery();
 }
