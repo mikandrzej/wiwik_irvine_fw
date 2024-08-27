@@ -105,6 +105,9 @@ bool IrvineConfiguration::begin()
     obd.speedInterval = 1000u;
     obd.protocolType = ObdProtocolType::AA_AT_THE_END;
 
+    vehicle.stopLogInterval = 60000u;
+    vehicle.movementLogInterval = 5000u;
+
     printConfiguration();
 
     return true;
@@ -166,7 +169,7 @@ void IrvineConfiguration::loadVehicleConfig()
 {
     // Add specific loading instructions for each vehicle parameter
     // Placeholder example for ignition source
-    vehicle.ignitionSource = preferences.getUChar("vehicle.ignitionSource");
+    vehicle.ignitionSource = static_cast<VehicleIgnitionSource>(preferences.getUChar("vehicle.ignitionSource"));
     // Add the rest of the parameters similarly
 }
 
@@ -274,7 +277,7 @@ void IrvineConfiguration::printConfiguration()
     timeObj["syncInterval"] = time.syncInterval;
 
     JsonObject vehicleObj = doc.createNestedObject("vehicle");
-    vehicleObj["ignitionSource"] = vehicle.ignitionSource;
+    vehicleObj["ignitionSource"] = static_cast<int>(vehicle.ignitionSource);
     vehicleObj["movementDetectionSource"] = static_cast<int>(vehicle.movementDetectionSource);
     vehicleObj["speedSource"] = static_cast<int>(vehicle.speedSource);
     vehicleObj["movementLogInterval"] = vehicle.movementLogInterval;

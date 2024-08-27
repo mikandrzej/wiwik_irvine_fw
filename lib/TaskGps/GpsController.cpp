@@ -80,10 +80,19 @@ bool GpsController::isMoving()
     return moving;
 }
 
+GpsData GpsController::getGpsData(bool *valid)
+{
+    *valid = lastShotValid;
+    return lastPublishedData;
+}
+
 void GpsController::parseGpsData(const String &data)
 {
     if (data.length() < 20)
+    {
+        lastShotValid = false;
         return;
+    }
     int iterator = 0;
     uint8_t mode = (uint8_t)getNextSubstring(data, ',', &iterator).toInt();
     uint8_t satellites = (uint8_t)getNextSubstring(data, ',', &iterator).toInt();
@@ -154,6 +163,7 @@ void GpsController::parseGpsData(const String &data)
 
     GpsData gpsData(mode, satellites, latitude, longitude, altitude, speed, gpsUnixTimestamp, unixTimestamp);
 
+    lastShotValid = true;
     handleGpsData(gpsData);
 }
 
@@ -217,7 +227,7 @@ void GpsController::publishNewData(GpsData &gpsData)
 {
     lastPublishedData = GpsData(gpsData);
     lastShotTimestamp = millis();
-    
+
     DataHandler::handleData(gpsData);
 }
 

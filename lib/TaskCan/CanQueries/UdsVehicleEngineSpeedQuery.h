@@ -4,13 +4,13 @@
 
 #include <DataLoggable.h>
 
-class UdsVehicleSpeedQuery : public UdsCurrDataQuery, public DataLoggable
+class UdsVehicleEngineSpeedQuery : public UdsCurrDataQuery, public DataLoggable
 {
 public:
-    UdsVehicleSpeedQuery() : UdsCurrDataQuery(0x0Du) {}
+    UdsVehicleEngineSpeedQuery() : UdsCurrDataQuery(0x0Cu) {}
     void loop() override;
 
-    uint8_t getSpeed(bool *valid = nullptr);
+    uint16_t getEngineSpeed(bool *valid = nullptr);
 
     String logData();
     String logItem();
@@ -23,7 +23,7 @@ private:
     uint32_t getTimeoutValue() override;
 
     bool valueReceived = false;
-    uint8_t lastValue = 0u;
+    uint16_t lastValue = 0u;
 };
 
-extern UdsVehicleSpeedQuery udsVehicleSpeedQuery;
+extern UdsVehicleEngineSpeedQuery udsVehicleEngineSpeedQuery;

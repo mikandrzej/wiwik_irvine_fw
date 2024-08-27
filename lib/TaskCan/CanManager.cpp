@@ -7,6 +7,10 @@
 #include <driver/twai.h>
 #include "CanTxQueue.h"
 
+#include "CanQueries/UdsVehicleSpeedQuery.h"
+#include "CanQueries/UdsVehicleEngineSpeedQuery.h"
+#include "CanQueries/UdsVehicleFeulLevelQuery.h"
+
 const char MODULE[] = "CAN_MGR";
 
 CanManager canManager;
@@ -29,12 +33,16 @@ void CanManager::loop()
     twai_message_t rcvdMessage;
     bool messageRcvd = twai_receive(&rcvdMessage, 0u) == ESP_OK;
 
-    if(messageRcvd)
+    if (messageRcvd)
     {
         udsVehicleSpeedQuery.frameReceived(rcvdMessage);
+        udsVehicleEngineSpeedQuery.frameReceived(rcvdMessage);
+        udsVehicleFuelLevelQuery.frameReceived(rcvdMessage);
     }
 
     udsVehicleSpeedQuery.loop();
+    udsVehicleEngineSpeedQuery.loop();
+    udsVehicleFuelLevelQuery.loop();
 
     for (auto &query : canQueries)
     {
@@ -44,7 +52,6 @@ void CanManager::loop()
         }
         query->loop();
     }
-
 
     if ((time - lastSentTimestamp) >= sendInterval)
     {
@@ -81,4 +88,3 @@ void CanManager::sendCallback(twai_message_t &msg)
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "sendCallback called");
     canTxQueue.push(msg);
 }
-

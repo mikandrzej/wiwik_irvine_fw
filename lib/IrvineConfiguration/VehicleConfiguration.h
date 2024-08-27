@@ -1,5 +1,11 @@
 #pragma once
 
+enum class VehicleIgnitionSource
+{
+    VOLTAGE,
+    CAN
+};
+
 enum class VehicleMovementDetectionSource
 {
     ACCELEROMETER,
@@ -16,7 +22,7 @@ enum class VehicleSpeedSource
 class VehicleConfiguration
 {
 public:
-    uint8_t ignitionSource = 0u; // 0: voltage, 1: CAN engine speed
+    VehicleIgnitionSource ignitionSource = VehicleIgnitionSource::CAN;
     VehicleMovementDetectionSource movementDetectionSource = VehicleMovementDetectionSource::GPS;
     VehicleSpeedSource speedSource = VehicleSpeedSource::CAN;
     uint32_t movementLogInterval = 0u;

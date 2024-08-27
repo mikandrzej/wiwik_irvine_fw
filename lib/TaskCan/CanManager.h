@@ -4,7 +4,6 @@
 
 #include "CanQueries/CanQuery.h"
 #include <driver/twai.h>
-#include "CanQueries/UdsVehicleSpeedQuery.h"
 
 class CanManager
 {
@@ -16,7 +15,6 @@ private:
     void sendCallback(twai_message_t &msg);
 
     std::vector<CanQuery *> canQueries;
-
 
     uint32_t lastSentTimestamp = 0u;
     uint32_t sendInterval = 50u;

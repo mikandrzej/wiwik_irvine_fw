@@ -15,6 +15,7 @@ void DataHandler::handleData(DataLoggable &data)
     char topic[100];
 
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "irvine/%s/measures/%s", irvineConfiguration.device.deviceId, data.logItem().c_str());
+    logger.logPrintF(LogSeverity::DEBUG, MODULE, "data: %s", data.logMqttData().c_str());
 
     sprintf(topic, "irvine/%s/measures/%s", irvineConfiguration.device.deviceId, data.logItem().c_str());
 

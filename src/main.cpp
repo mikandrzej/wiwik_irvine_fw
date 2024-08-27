@@ -25,6 +25,12 @@
 
 #include <TaskCan.h>
 
+#include <VehicleDataReporterTask.h>
+
+#include <TaskVehicle.h>
+
+const char MODULE[] = "MAIN";
+
 #define TIMER0_INTERVAL_MS 1000
 
 uint32_t software_version = 5u;
@@ -54,17 +60,33 @@ StaticTask_t xCanTaskBuffer;
 StackType_t xCanStack[GPS_TASK_STACK_SIZE];
 TaskHandle_t xCanTaskHandle = NULL;
 
+#define DREP_TASK_STACK_SIZE 4096
+StaticTask_t xDRepTaskBuffer;
+StackType_t xDRepStack[DREP_TASK_STACK_SIZE];
+TaskHandle_t xDrepTaskHandle = NULL;
+
+#define VEHICLE_TASK_STACK_SIZE 4096
+StaticTask_t xVehicleTaskBuffer;
+StackType_t xVehicleStack[VEHICLE_TASK_STACK_SIZE];
+TaskHandle_t xVehicleTaskHandle = NULL;
+
 void setup()
 {
+  WiFi.mode(WIFI_OFF);
+
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(CONSOLE_UART_BAUD);
+  
 
   logger.begin(&Serial);
   dataLogger.begin();
   irvineConfiguration.begin();
   modemManagement.begin();
 
-  logger.logPrintF(LogSeverity::INFO, "MAIN", "Application started");
+  setCpuFrequencyMhz(80);
+  logger.logPrintF(LogSeverity::INFO, MODULE, "CPU freq %d", getCpuFrequencyMhz());
+
+  logger.logPrintF(LogSeverity::INFO, MODULE, "Application started");
 
   pinMode(BOARD_CAN_SE_PIN, OUTPUT);
   digitalWrite(BOARD_CAN_SE_PIN, LOW);
@@ -122,7 +144,7 @@ void setup()
       &xBleTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 
-  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
+  xGpsTaskHandle = xTaskCreateStaticPinnedToCore(
       taskGps,             /* Function that implements the task. */
       "GPS",               /* Text name for the task. */
       GPS_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
@@ -132,7 +154,7 @@ void setup()
       &xGpsTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 
-  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
+  xDataLoggerTaskHandle = xTaskCreateStaticPinnedToCore(
       taskDataLogger,              /* Function that implements the task. */
       "D_LOGGER",                  /* Text name for the task. */
       DATA_LOGGER_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
@@ -142,7 +164,7 @@ void setup()
       &xDataLoggerTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 
-  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
+  xCanTaskHandle = xTaskCreateStaticPinnedToCore(
       taskCan,             /* Function that implements the task. */
       "CAN",               /* Text name for the task. */
       CAN_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
@@ -150,6 +172,26 @@ void setup()
       tskIDLE_PRIORITY,    /* Priority at which the task is created. */
       xCanStack,           /* Array to use as the task's stack. */
       &xCanTaskBuffer,
+      1); /* Variable to hold the task's data structure. */
+
+  xDrepTaskHandle = xTaskCreateStaticPinnedToCore(
+      taskVehicleDataReporter, /* Function that implements the task. */
+      "DREP",                  /* Text name for the task. */
+      DREP_TASK_STACK_SIZE,     /* Number of indexes in the xStack array. */
+      (void *)1,               /* Parameter passed into the task. */
+      tskIDLE_PRIORITY,        /* Priority at which the task is created. */
+      xDRepStack,              /* Array to use as the task's stack. */
+      &xDRepTaskBuffer,
+      1); /* Variable to hold the task's data structure. */
+
+  xVehicleTaskHandle = xTaskCreateStaticPinnedToCore(
+      taskVehicle, /* Function that implements the task. */
+      "VEH",                  /* Text name for the task. */
+      VEHICLE_TASK_STACK_SIZE,     /* Number of indexes in the xStack array. */
+      (void *)1,               /* Parameter passed into the task. */
+      tskIDLE_PRIORITY,        /* Priority at which the task is created. */
+      xVehicleStack,              /* Array to use as the task's stack. */
+      &xVehicleTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 }
 

@@ -52,5 +52,7 @@ bool CanQuery::frameReceived(twai_message_t &msg)
         lastResponseTimestamp = millis();
 
         waitingForResponse = false;
+        return true;
     }
+    return false;
 }
