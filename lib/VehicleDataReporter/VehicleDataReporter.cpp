@@ -9,6 +9,7 @@
 
 #include <DataHandler.h>
 #include <Device.h>
+#include <Vehicle.h>
 
 VehicleDataReporter vehicleDataReporter;
 
@@ -21,7 +22,11 @@ void VehicleDataReporter::loop()
     uint32_t interval;
     uint32_t timestamp = millis();
 
-    checkMoving();
+    bool valid;
+    bool isMoving = vehicle.isMoving(&valid);
+
+    if (!valid)
+        isMoving = true;
 
     if (isMoving)
         interval = irvineConfiguration.vehicle.movementLogInterval;
@@ -50,43 +55,41 @@ String VehicleDataReporter::logMqttData()
     return savedlogData;
 }
 
-void VehicleDataReporter::checkMoving()
-{
-    switch (irvineConfiguration.vehicle.movementDetectionSource)
-    {
-    case VehicleMovementDetectionSource::ACCELEROMETER:
-        isMoving = 0u;
-        break;
-    case VehicleMovementDetectionSource::GPS:
-        isMoving = gpsController.isMoving() ? 1u : 0u;
-        break;
-    case VehicleMovementDetectionSource::CAN:
-        isMoving = 0u;
-        break;
-    }
-}
-
 void VehicleDataReporter::report()
 {
     char reportData[500];
+    bool valid;
 
     uint64_t unixTimestamp = device.getUnixTimestamp();
     if (unixTimestamp)
     {
-        obtainData();
+        size_t len = sprintf(reportData, R"({"tim":%llu)", unixTimestamp);
 
-        size_t len = sprintf(reportData,
-                             R"({"t":%llu,"spd":%0.1f,"mov":%d,"ign":%d,"fue":%.2f,"gps":%d)",
-                             device.getUnixTimestamp(),
-                             speed,
-                             isMoving,
-                             isIgnitionOn,
-                             fuelLevel,
-                             gpsDataValid ? 1u : 0u);
-        if (gpsDataValid)
+        float speed = vehicle.getSpeed(&valid);
+        if (valid)
+            len += sprintf(&reportData[len], R"(,"vel":%.2f)", speed);
+
+        uint16_t engineSpeed = udsVehicleEngineSpeedQuery.getEngineSpeed(&valid);
+        if (valid)
+            len += sprintf(&reportData[len], R"(,"eng":%u)", engineSpeed);
+
+        float fuelLevel = udsVehicleFuelLevelQuery.getFuelLevel(&valid);
+        if (valid)
+            len += sprintf(&reportData[len], R"(,"fue":%.2f)", fuelLevel);
+
+        float voltage = vehicle.getVccVoltage(&valid);
+        if (valid)
+            len += sprintf(&reportData[len], R"(,"bat":%.2f)", voltage);
+
+        bool ingintionOn = vehicle.isIgnitionOn(&valid);
+        if (valid)
+            len += sprintf(&reportData[len], R"(,"ign":%d)", ingintionOn ? 1 : 0);
+
+        GpsData gpsData = gpsController.getGpsData(&valid);
+        if (valid)
         {
             len += sprintf(&reportData[len],
-                           R"(,"gt":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"spd":%.2f,"sat":%d)",
+                           R"(,"gps":{"t":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"vel":%.2f,"sat":%d})",
                            gpsData.gpsUnixTimestamp,
                            gpsData.longitude,
                            gpsData.latitude,
@@ -94,45 +97,10 @@ void VehicleDataReporter::report()
                            gpsData.speed,
                            gpsData.satellites);
         }
-        len += sprintf(&reportData[len], R"(})");
+
+        len += sprintf(&reportData[len], "}");
 
         savedlogData = String(reportData);
         DataHandler::handleData(*this);
     }
-}
-
-void VehicleDataReporter::obtainData()
-{
-    speed = getSpeed();
-    engineSpeed = udsVehicleEngineSpeedQuery.getEngineSpeed();
-    fuelLevel = udsVehicleFuelLevelQuery.getFuelLevel();
-    gpsData = gpsController.getGpsData(&gpsDataValid);
-
-    switch (irvineConfiguration.vehicle.ignitionSource)
-    {
-    case VehicleIgnitionSource::CAN:
-        isIgnitionOn = engineSpeed > 0u ? 1u : 0u;
-        break;
-    case VehicleIgnitionSource::VOLTAGE:
-        isIgnitionOn = 1u;
-        break;
-    }
-}
-
-float VehicleDataReporter::getSpeed()
-{
-    bool valid;
-    float speed;
-    switch (irvineConfiguration.vehicle.speedSource)
-    {
-    case VehicleSpeedSource::CAN:
-        speed = udsVehicleSpeedQuery.getSpeed(&valid);
-        if (valid)
-            return speed;
-        else
-            return gpsData.speed;
-    case VehicleSpeedSource::GPS:
-        break;
-    }
-    return 0.0f;
 }

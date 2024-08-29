@@ -3,14 +3,16 @@
 enum class VehicleIgnitionSource
 {
     VOLTAGE,
-    CAN
+    CAN,
+    ALWAYS_ON
 };
 
 enum class VehicleMovementDetectionSource
 {
     ACCELEROMETER,
     GPS,
-    CAN
+    CAN,
+    VOLTAGE,
 };
 
 enum class VehicleSpeedSource
@@ -23,7 +25,7 @@ class VehicleConfiguration
 {
 public:
     VehicleIgnitionSource ignitionSource = VehicleIgnitionSource::CAN;
-    VehicleMovementDetectionSource movementDetectionSource = VehicleMovementDetectionSource::GPS;
+    VehicleMovementDetectionSource movementDetectionSource = VehicleMovementDetectionSource::CAN;
     VehicleSpeedSource speedSource = VehicleSpeedSource::CAN;
     uint32_t movementLogInterval = 0u;
     uint32_t stopLogInterval = 0u;

@@ -1,7 +1,6 @@
 #include "GpsController.h"
 
 #include <ModemManagement.h>
-#include <DataHandler.h>
 #include <Logger.h>
 #include <IrvineConfiguration.h>
 #include <Device.h>
@@ -64,6 +63,7 @@ void GpsController::loop()
         }
         break;
     case GpsState::READY:
+        
         if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
         {
             String rawGpsData = modem.getGPSraw();
@@ -75,15 +75,18 @@ void GpsController::loop()
     }
 }
 
-bool GpsController::isMoving()
+bool GpsController::isMoving(bool *valid)
 {
-    return moving;
+    if (valid)
+        *valid = lastShotValid;
+    return lastReceivedData.speed > irvineConfiguration.gps.movementSpeedThreshold;
 }
 
 GpsData GpsController::getGpsData(bool *valid)
 {
-    *valid = lastShotValid;
-    return lastPublishedData;
+    if (valid)
+        *valid = lastShotValid;
+    return lastReceivedData;
 }
 
 void GpsController::parseGpsData(const String &data)
@@ -207,12 +210,12 @@ void GpsController::handleGpsData(GpsData &gpsData)
             {
                 if (irvineConfiguration.gps.freezePositionDuringStop)
                 {
-                    GpsData tempData = lastPublishedData;
-                    lastPublishedData = gpsData;
-                    lastPublishedData.altitude = tempData.altitude;
-                    lastPublishedData.latitude = tempData.latitude;
-                    lastPublishedData.longitude = tempData.longitude;
-                    publishNewData(lastPublishedData);
+                    GpsData tempData = lastReceivedData;
+                    lastReceivedData = gpsData;
+                    lastReceivedData.altitude = tempData.altitude;
+                    lastReceivedData.latitude = tempData.latitude;
+                    lastReceivedData.longitude = tempData.longitude;
+                    publishNewData(lastReceivedData);
                 }
                 else
                 {
@@ -225,10 +228,8 @@ void GpsController::handleGpsData(GpsData &gpsData)
 
 void GpsController::publishNewData(GpsData &gpsData)
 {
-    lastPublishedData = GpsData(gpsData);
+    lastReceivedData = GpsData(gpsData);
     lastShotTimestamp = millis();
-
-    DataHandler::handleData(gpsData);
 }
 
 String GpsController::getNextSubstring(const String &input, char separator, int *iterator)
@@ -264,8 +265,8 @@ float GpsController::getDistanceFromLastShot(const GpsData &gpsData)
     const double R = 6371000.0; // Promień Ziemi w metrach
 
     // Konwersja stopni na radiany
-    double lat1Rad = degreesToRadians(lastPublishedData.latitude);
-    double lon1Rad = degreesToRadians(lastPublishedData.longitude);
+    double lat1Rad = degreesToRadians(lastReceivedData.latitude);
+    double lon1Rad = degreesToRadians(lastReceivedData.longitude);
     double lat2Rad = degreesToRadians(gpsData.latitude);
     double lon2Rad = degreesToRadians(gpsData.longitude);
 

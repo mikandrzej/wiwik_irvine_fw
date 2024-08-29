@@ -14,7 +14,7 @@ class GpsController
 {
 public:
     void loop();
-    bool isMoving();
+    bool isMoving(bool *valid);
     GpsData getGpsData(bool *valid);
 
 private:
@@ -29,7 +29,7 @@ private:
 
     GpsState state = GpsState::UNINITIALIZED;
     bool firstShot = true;
-    GpsData lastPublishedData;
+    GpsData lastReceivedData;
     bool lastShotValid = false;
     uint32_t lastShotTimestamp = 0u;
 

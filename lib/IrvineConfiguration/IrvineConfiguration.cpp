@@ -107,6 +107,7 @@ bool IrvineConfiguration::begin()
 
     vehicle.stopLogInterval = 60000u;
     vehicle.movementLogInterval = 5000u;
+    vehicle.ignitionSource = VehicleIgnitionSource::VOLTAGE;
 
     printConfiguration();
 

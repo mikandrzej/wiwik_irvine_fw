@@ -17,22 +17,10 @@ public:
     String logMqttData() override;
 
 private:
-    void checkMoving();
     void report();
-
-    void obtainData();
-
-    float getSpeed();
 
     uint32_t lastReportTimestamp;
 
-    float speed;
-    float fuelLevel;
-    uint16_t engineSpeed;
-    GpsData gpsData;
-    bool gpsDataValid;
-    uint8_t isMoving;
-    uint8_t isIgnitionOn;
     String savedlogData = "";
 };
 
