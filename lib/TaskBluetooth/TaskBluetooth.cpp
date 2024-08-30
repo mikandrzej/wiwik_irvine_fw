@@ -117,7 +117,7 @@ static void esp_gap_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_
     {
         uint32_t duration = 0; // 0 indicates continuous scanning
         esp_ble_gap_start_scanning(duration);
-        logger.logPrintF(LogSeverity::INFO, MODULE, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT");
+        logger.logPrintF(LogSeverity::DEBUG, MODULE, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT");
         break;
     }
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:

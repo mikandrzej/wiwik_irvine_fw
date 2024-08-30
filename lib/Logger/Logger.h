@@ -17,8 +17,8 @@ public:
     void logPrintF(const LogSeverity severity, const char *module, const char *format, ...);
 
 private:
-    void putHeader(const char *module);
-    LogSeverity currentSeverity = LogSeverity::DEBUG;
+    void putHeader(const LogSeverity severity, const char *module);
+    LogSeverity currentSeverity = LogSeverity::INFO;
     HardwareSerial *serial = nullptr;
 };
 
