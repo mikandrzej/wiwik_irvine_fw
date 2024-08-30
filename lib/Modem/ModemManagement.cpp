@@ -81,12 +81,12 @@ void ModemManagement::loop()
                 if (sim_status == SIM_READY)
                 {
                     logger.logPrintF(LogSeverity::INFO, MODULE, "SIM unlocked");
-                    state = ModemManagementState::INFINITE_LOOP;
                 }
             }
             else
             {
                 logger.logPrintF(LogSeverity::ERROR, MODULE, "SIM unlock error");
+                state = ModemManagementState::INFINITE_LOOP;
                 break;
             }
         }
@@ -160,6 +160,10 @@ void ModemManagement::loop()
                                      timezoneNetwork,
                                      unixTimestamp);
                 }
+                else
+                {
+                    logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to get timestamp from GSM");
+                }
 
                 if (modem.gprsConnect(irvineConfiguration.modem.apn,
                                       irvineConfiguration.modem.apnUsername,
@@ -178,7 +182,7 @@ void ModemManagement::loop()
         break;
 
     case ModemManagementState::APN_CONNECTED:
-        if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, 0) == pdTRUE)
         {
             if (!modem.isGprsConnected())
             {

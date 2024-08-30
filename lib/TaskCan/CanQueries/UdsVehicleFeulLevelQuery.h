@@ -7,7 +7,7 @@
 class UdsVehicleFuelLevelQuery : public UdsCurrDataQuery, public DataLoggable
 {
 public:
-    UdsVehicleFuelLevelQuery() : UdsCurrDataQuery(0x0Du) {}
+    UdsVehicleFuelLevelQuery() : UdsCurrDataQuery(0x2Fu) {}
     void loop() override;
 
     float getFuelLevel(bool *valid = nullptr);

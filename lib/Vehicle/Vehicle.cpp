@@ -51,8 +51,7 @@ bool Vehicle::isIgnitionOn(bool *valid)
     switch (irvineConfiguration.vehicle.ignitionSource)
     {
     case VehicleIgnitionSource::CAN:
-        udsVehicleEngineSpeedQuery.getEngineSpeed(valid);
-        return *valid;
+        return udsVehicleEngineSpeedQuery.getEngineSpeed(valid) > 200;
     case VehicleIgnitionSource::VOLTAGE:
         return isEngineRunningBasedOnVoltage(valid);
     case VehicleIgnitionSource::ALWAYS_ON:

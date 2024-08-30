@@ -12,7 +12,7 @@ UdsVehicleSpeedQuery udsVehicleSpeedQuery;
 
 void UdsVehicleSpeedQuery::loop()
 {
-    if (checkTxInterval())
+    if (irvineConfiguration.obd.speedActive && checkTxInterval())
     {
         sendQuery();
     }
@@ -25,7 +25,7 @@ uint32_t UdsVehicleSpeedQuery::getIntervalValue()
 
 uint32_t UdsVehicleSpeedQuery::getTimeoutValue()
 {
-    return irvineConfiguration.obd.speedInterval / 2u;
+    return irvineConfiguration.obd.speedInterval * 3u;
 }
 
 bool UdsVehicleSpeedQuery::parseCurrDataResponse(uint8_t dataLen, uint8_t *data)
@@ -36,9 +36,12 @@ bool UdsVehicleSpeedQuery::parseCurrDataResponse(uint8_t dataLen, uint8_t *data)
     lastValue = data[0u];
     valueReceived = true;
 
-    DataHandler::handleData(*this);
+    // DataHandler::handleData(*this);
 
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "UDS Speed: %u", lastValue);
+
+    
+
 
     return true;
 }
@@ -47,8 +50,7 @@ uint8_t UdsVehicleSpeedQuery::getSpeed(bool *valid)
 {
     if (valid)
     {
-        if (checkRxTimeout())
-            *valid = false;
+        *valid = !checkRxTimeout();
     }
     return lastValue;
 }

@@ -11,6 +11,10 @@
 #include <Device.h>
 #include <Vehicle.h>
 
+#include <Logger.h>
+
+const char MODULE[] = "DREP";
+
 VehicleDataReporter vehicleDataReporter;
 
 void VehicleDataReporter::init()
@@ -36,6 +40,7 @@ void VehicleDataReporter::loop()
     if ((timestamp - lastReportTimestamp) >= interval)
     {
         report();
+        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Report interval");
         lastReportTimestamp = timestamp;
     }
 }
@@ -99,6 +104,8 @@ void VehicleDataReporter::report()
         }
 
         len += sprintf(&reportData[len], "}");
+
+
 
         savedlogData = String(reportData);
         DataHandler::handleData(*this);

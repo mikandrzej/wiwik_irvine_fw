@@ -1,5 +1,5 @@
-#include "IrvineConfiguration.h"
 
+#include "IrvineConfiguration.h"
 #include <Preferences.h>
 #include <Logger.h>
 #include <ArduinoJson.h>
@@ -103,11 +103,18 @@ bool IrvineConfiguration::begin()
 
     obd.speedActive = true;
     obd.speedInterval = 1000u;
+    obd.engineSpeedActive = true;
+    obd.engineSpeedInterval = 1000u;
+    obd.fuelLevelActive = true;
+    obd.fuelLevelInterval = 1000u;
     obd.protocolType = ObdProtocolType::AA_AT_THE_END;
+
 
     vehicle.stopLogInterval = 60000u;
     vehicle.movementLogInterval = 5000u;
     vehicle.ignitionSource = VehicleIgnitionSource::VOLTAGE;
+
+    time.source = TimeSource::GSM;
 
     printConfiguration();
 

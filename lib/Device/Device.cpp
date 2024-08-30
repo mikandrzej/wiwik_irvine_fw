@@ -52,7 +52,7 @@ uint64_t Device::calculateUnixTimestamp(const uint64_t lastValue, const uint32_t
 {
     uint32_t msSinceLastValue = millis() - lastTimestamp;
     msSinceLastValue /= 1000u;
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "msSince: %lu, lastVal: %llu, lastTimestamp: %lu", msSinceLastValue, lastValue, lastTimestamp);
+    // logger.logPrintF(LogSeverity::DEBUG, MODULE, "msSince: %lu, lastVal: %llu, lastTimestamp: %lu", msSinceLastValue, lastValue, lastTimestamp);
     return lastValue + (uint64_t)msSinceLastValue;
 }
 

@@ -6,13 +6,13 @@
 #include "Logger.h"
 #include <IrvineConfiguration.h>
 
-const char MODULE[] = "UDS_SPEED";
+const char MODULE[] = "UDS_FUEL";
 
 UdsVehicleFuelLevelQuery udsVehicleFuelLevelQuery;
 
 void UdsVehicleFuelLevelQuery::loop()
 {
-    if (checkTxInterval())
+    if (irvineConfiguration.obd.fuelLevelActive && checkTxInterval())
     {
         sendQuery();
     }
@@ -25,20 +25,23 @@ uint32_t UdsVehicleFuelLevelQuery::getIntervalValue()
 
 uint32_t UdsVehicleFuelLevelQuery::getTimeoutValue()
 {
-    return irvineConfiguration.obd.speedInterval / 2u;
+    return irvineConfiguration.obd.speedInterval * 3u;
 }
 
 bool UdsVehicleFuelLevelQuery::parseCurrDataResponse(uint8_t dataLen, uint8_t *data)
 {
     if (dataLen != 1u)
         return false;
+    
+    uint8_t value = data[0];
 
-    lastValue = (float(data[0u]) * 100.0f) / 255.0f;
+
+    lastValue = (float)value / 2.55f;
     valueReceived = true;
 
-    DataHandler::handleData(*this);
+    // DataHandler::handleData(*this);
 
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "UDS FuelLevel: %u", lastValue);
+    logger.logPrintF(LogSeverity::DEBUG, MODULE, "UDS FuelLevel: %f", lastValue);
 
     return true;
 }
@@ -47,8 +50,7 @@ float UdsVehicleFuelLevelQuery::getFuelLevel(bool *valid)
 {
     if (valid)
     {
-        if (checkRxTimeout())
-            *valid = false;
+        *valid = !checkRxTimeout();
     }
     return lastValue;
 }

@@ -64,7 +64,7 @@ void GpsController::loop()
         break;
     case GpsState::READY:
         
-        if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
+        if (xSemaphoreTake(modemSemaphore, 0) == pdTRUE)
         {
             String rawGpsData = modem.getGPSraw();
             xSemaphoreGive(modemSemaphore);

@@ -19,7 +19,7 @@ public:
 private:
     void report();
 
-    uint32_t lastReportTimestamp;
+    uint32_t lastReportTimestamp = 0u;
 
     String savedlogData = "";
 };

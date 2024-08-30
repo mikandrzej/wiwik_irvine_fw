@@ -29,13 +29,15 @@
 
 #include <TaskVehicle.h>
 
+#include <nvs_flash.h>
+
 const char MODULE[] = "MAIN";
 
 #define TIMER0_INTERVAL_MS 1000
 
 uint32_t software_version = 5u;
 
-#define BLE_TASK_STACK_SIZE 4096
+#define BLE_TASK_STACK_SIZE 16384
 StaticTask_t xBleTaskBuffer;
 StackType_t xBleStack[BLE_TASK_STACK_SIZE];
 TaskHandle_t xBleTaskHandle = NULL;
@@ -76,14 +78,13 @@ void setup()
 
   SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(CONSOLE_UART_BAUD);
-  
 
   logger.begin(&Serial);
   dataLogger.begin();
   irvineConfiguration.begin();
   modemManagement.begin();
 
-  setCpuFrequencyMhz(80);
+  setCpuFrequencyMhz(240);
   logger.logPrintF(LogSeverity::INFO, MODULE, "CPU freq %d", getCpuFrequencyMhz());
 
   logger.logPrintF(LogSeverity::INFO, MODULE, "Application started");
@@ -177,7 +178,7 @@ void setup()
   xDrepTaskHandle = xTaskCreateStaticPinnedToCore(
       taskVehicleDataReporter, /* Function that implements the task. */
       "DREP",                  /* Text name for the task. */
-      DREP_TASK_STACK_SIZE,     /* Number of indexes in the xStack array. */
+      DREP_TASK_STACK_SIZE,    /* Number of indexes in the xStack array. */
       (void *)1,               /* Parameter passed into the task. */
       tskIDLE_PRIORITY,        /* Priority at which the task is created. */
       xDRepStack,              /* Array to use as the task's stack. */
@@ -185,12 +186,12 @@ void setup()
       1); /* Variable to hold the task's data structure. */
 
   xVehicleTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskVehicle, /* Function that implements the task. */
-      "VEH",                  /* Text name for the task. */
-      VEHICLE_TASK_STACK_SIZE,     /* Number of indexes in the xStack array. */
+      taskVehicle,             /* Function that implements the task. */
+      "VEH",                   /* Text name for the task. */
+      VEHICLE_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
       (void *)1,               /* Parameter passed into the task. */
       tskIDLE_PRIORITY,        /* Priority at which the task is created. */
-      xVehicleStack,              /* Array to use as the task's stack. */
+      xVehicleStack,           /* Array to use as the task's stack. */
       &xVehicleTaskBuffer,
       1); /* Variable to hold the task's data structure. */
 }
@@ -198,5 +199,5 @@ void setup()
 void loop()
 {
   modemManagement.loop();
-  vTaskDelay(1);
+  vTaskDelay(100);
 }

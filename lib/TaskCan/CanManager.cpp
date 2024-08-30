@@ -61,22 +61,22 @@ void CanManager::loop()
             twai_message_t msgToSend = canTxQueue.front();
             canTxQueue.pop();
 
-            logger.logPrintF(LogSeverity::DEBUG, MODULE, "sending frame %X: (%u)%X%X%X%X%X%X%X%X. extd:%d",
-                             msgToSend.identifier,
-                             msgToSend.data_length_code,
-                             msgToSend.data[0u],
-                             msgToSend.data[1u],
-                             msgToSend.data[2u],
-                             msgToSend.data[3u],
-                             msgToSend.data[4u],
-                             msgToSend.data[5u],
-                             msgToSend.data[6u],
-                             msgToSend.data[7u],
-                             msgToSend.extd);
+            // logger.logPrintF(LogSeverity::DEBUG, MODULE, "sending frame %X: (%u)%X%X%X%X%X%X%X%X. extd:%d",
+            //                  msgToSend.identifier,
+            //                  msgToSend.data_length_code,
+            //                  msgToSend.data[0u],
+            //                  msgToSend.data[1u],
+            //                  msgToSend.data[2u],
+            //                  msgToSend.data[3u],
+            //                  msgToSend.data[4u],
+            //                  msgToSend.data[5u],
+            //                  msgToSend.data[6u],
+            //                  msgToSend.data[7u],
+            //                  msgToSend.extd);
 
             esp_err_t status = twai_transmit(&msgToSend, 100u);
 
-            logger.logPrintF(LogSeverity::DEBUG, MODULE, "twai transmit status: %x", status);
+            // logger.logPrintF(LogSeverity::DEBUG, MODULE, "twai transmit status: %x", status);
 
             lastSentTimestamp = time;
         }
@@ -85,6 +85,5 @@ void CanManager::loop()
 
 void CanManager::sendCallback(twai_message_t &msg)
 {
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "sendCallback called");
     canTxQueue.push(msg);
 }
