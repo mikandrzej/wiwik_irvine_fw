@@ -61,7 +61,14 @@ void DataLogger::begin()
     cardSize = SD.cardSize() / (1024 * 1024);
     logger.logPrintF(LogSeverity::INFO, MODULE, "SD Card Size: %lluMB\n", cardSize);
 
+    if (!SD.mkdir(logPathPrefix))
+    {
+        logger.logPrintF(LogSeverity::INFO, MODULE, "Failed to create directory %s", logPathPrefix.c_str());
+        return;
+    }
+
     logger.logPrintF(LogSeverity::INFO, MODULE, "Module init OK");
+
     initialized = true;
 }
 
@@ -73,7 +80,7 @@ void DataLogger::logData(DataLoggerQueueItem &data)
         return;
     }
 
-    String path = logPathPrefix + String(data.logItem) + ".csv";
+    String path = logPathPrefix + "/" + String(data.logItem) + ".csv";
     auto *fileData = getFileData(path);
 
     if (fileData == nullptr)
@@ -119,10 +126,17 @@ PathFileData *DataLogger::getFileData(String &path)
         }
     }
 
+    fs::File file = SD.open(path.c_str(), FILE_APPEND);
+    if (!file)
+    {
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to create directory %s", path.c_str());
+        return nullptr;
+    }
+
     auto *fpData = new PathFileData{
         .path = path,
-        .file = SD.open(path.c_str(), FILE_APPEND),
-    };
+        .file = file};
+
     pathFiles.push_back(fpData);
 
     logger.logPrintF(LogSeverity::INFO, MODULE, "Opened new file %s", path.c_str());

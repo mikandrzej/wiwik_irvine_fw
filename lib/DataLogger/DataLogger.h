@@ -34,7 +34,7 @@ public:
 
 private:
     void reopenFile(PathFileData *fileData);
-    String logPathPrefix = "/log/";
+    String logPathPrefix = "/log";
 
     int linesToSave = {0};
 
