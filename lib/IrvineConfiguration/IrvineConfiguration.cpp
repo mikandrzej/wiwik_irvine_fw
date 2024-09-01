@@ -9,6 +9,119 @@ const char MODULE[] = "CFG";
 
 IrvineConfiguration irvineConfiguration;
 
+static ConfigurationParameter parameters[] = {
+    {"srv.mqttHost", ConfigurationParameterType::STR, &irvineConfiguration.server.mqttHost, sizeof(irvineConfiguration.server.mqttHost)},
+    {"srv.mqttPort", ConfigurationParameterType::USHORT, &irvineConfiguration.server.mqttPort, 0},
+    {"srv.mqttUser", ConfigurationParameterType::STR, &irvineConfiguration.server.mqttUsername, sizeof(irvineConfiguration.server.mqttUsername)},
+    {"srv.mqttPass", ConfigurationParameterType::STR, &irvineConfiguration.server.mqttPassword, sizeof(irvineConfiguration.server.mqttPassword)},
+    {"srv.mngHost", ConfigurationParameterType::STR, &irvineConfiguration.server.managementHost, sizeof(irvineConfiguration.server.managementHost)},
+    {"srv.mngPort", ConfigurationParameterType::USHORT, &irvineConfiguration.server.managementPort, 0},
+    {"srv.mngUser", ConfigurationParameterType::STR, &irvineConfiguration.server.managementUsername, sizeof(irvineConfiguration.server.managementUsername)},
+    {"srv.mngPass", ConfigurationParameterType::STR, &irvineConfiguration.server.managementPassword, sizeof(irvineConfiguration.server.managementPassword)},
+
+    {"mdm.apn", ConfigurationParameterType::STR, &irvineConfiguration.modem.apn, sizeof(irvineConfiguration.modem.apn)},
+    {"mdm.apnUser", ConfigurationParameterType::STR, &irvineConfiguration.modem.apnUsername, sizeof(irvineConfiguration.modem.apnUsername)},
+    {"mdm.apnPass", ConfigurationParameterType::STR, &irvineConfiguration.modem.apnPassword, sizeof(irvineConfiguration.modem.apnPassword)},
+    {"mdm.pin", ConfigurationParameterType::STR, &irvineConfiguration.modem.pin, sizeof(irvineConfiguration.modem.pin)},
+    {"mdm.natRoam", ConfigurationParameterType::BOOL, &irvineConfiguration.modem.nationalRoaming, 0},
+    {"mdm.inatRoam", ConfigurationParameterType::BOOL, &irvineConfiguration.modem.internationalRoaming, sizeof(irvineConfiguration.modem.internationalRoaming)},
+    {"mdm.opWlst[0]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[0], sizeof(irvineConfiguration.modem.operatorsWhitelist[0])},
+    {"mdm.opWlst[1]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[1], sizeof(irvineConfiguration.modem.operatorsWhitelist[1])},
+    {"mdm.opWlst[2]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[2], sizeof(irvineConfiguration.modem.operatorsWhitelist[2])},
+    {"mdm.opWlst[3]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[3], sizeof(irvineConfiguration.modem.operatorsWhitelist[3])},
+    {"mdm.opWlst[4]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[4], sizeof(irvineConfiguration.modem.operatorsWhitelist[4])},
+    {"mdm.opWlst[5]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[5], sizeof(irvineConfiguration.modem.operatorsWhitelist[5])},
+    {"mdm.opWlst[6]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[6], sizeof(irvineConfiguration.modem.operatorsWhitelist[6])},
+    {"mdm.opWlst[7]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[7], sizeof(irvineConfiguration.modem.operatorsWhitelist[7])},
+    {"mdm.opWlst[8]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[8], sizeof(irvineConfiguration.modem.operatorsWhitelist[8])},
+    {"mdm.opWlst[9]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsWhitelist[9], sizeof(irvineConfiguration.modem.operatorsWhitelist[9])},
+    {"mdm.opWlst[0]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[0], sizeof(irvineConfiguration.modem.operatorsBlacklist[0])},
+    {"mdm.opWlst[1]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[1], sizeof(irvineConfiguration.modem.operatorsBlacklist[1])},
+    {"mdm.opWlst[2]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[2], sizeof(irvineConfiguration.modem.operatorsBlacklist[2])},
+    {"mdm.opWlst[3]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[3], sizeof(irvineConfiguration.modem.operatorsBlacklist[3])},
+    {"mdm.opWlst[4]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[4], sizeof(irvineConfiguration.modem.operatorsBlacklist[4])},
+    {"mdm.opWlst[5]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[5], sizeof(irvineConfiguration.modem.operatorsBlacklist[5])},
+    {"mdm.opWlst[6]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[6], sizeof(irvineConfiguration.modem.operatorsBlacklist[6])},
+    {"mdm.opWlst[7]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[7], sizeof(irvineConfiguration.modem.operatorsBlacklist[7])},
+    {"mdm.opWlst[8]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[8], sizeof(irvineConfiguration.modem.operatorsBlacklist[8])},
+    {"mdm.opWlst[9]", ConfigurationParameterType::STR, &irvineConfiguration.modem.operatorsBlacklist[9], sizeof(irvineConfiguration.modem.operatorsBlacklist[9])},
+
+    {"sms.mngAllNo[0]", ConfigurationParameterType::STR, &irvineConfiguration.sms.mngAllowedNumbers[0], sizeof(irvineConfiguration.sms.mngAllowedNumbers[0])},
+    {"sms.mngAllNo[1]", ConfigurationParameterType::STR, &irvineConfiguration.sms.mngAllowedNumbers[1], sizeof(irvineConfiguration.sms.mngAllowedNumbers[1])},
+    {"sms.mngAllNo[2]", ConfigurationParameterType::STR, &irvineConfiguration.sms.mngAllowedNumbers[2], sizeof(irvineConfiguration.sms.mngAllowedNumbers[2])},
+    {"sms.mngAllNo[3]", ConfigurationParameterType::STR, &irvineConfiguration.sms.mngAllowedNumbers[3], sizeof(irvineConfiguration.sms.mngAllowedNumbers[3])},
+    {"sms.mngAllNo[4]", ConfigurationParameterType::STR, &irvineConfiguration.sms.mngAllowedNumbers[4], sizeof(irvineConfiguration.sms.mngAllowedNumbers[4])},
+
+    {"tim.source", ConfigurationParameterType::UCHAR, &irvineConfiguration.time.source, 0},
+    {"tim.ntpSrv", ConfigurationParameterType::STR, &irvineConfiguration.time.ntpServer, sizeof(irvineConfiguration.time.ntpServer)},
+    {"tim.syncInt", ConfigurationParameterType::UINT, &irvineConfiguration.time.syncInterval, 0},
+
+    {"veh.ignSrc", ConfigurationParameterType::UCHAR, &irvineConfiguration.vehicle.ignitionSource, 0},
+
+    {"gps.minDist", ConfigurationParameterType::UINT, &irvineConfiguration.gps.minimumDistance, 0},
+    {"gps.maxInterv", ConfigurationParameterType::UINT, &irvineConfiguration.gps.maxInterval, 0},
+    {"gps.slIgnTmt", ConfigurationParameterType::UINT, &irvineConfiguration.gps.sleepAfterIgnitionOffTimeout, 0},
+    {"gps.frPosStop", ConfigurationParameterType::UCHAR, &irvineConfiguration.gps.freezePositionDuringStop, 0},
+    {"gps.movSpdThr", ConfigurationParameterType::UINT, &irvineConfiguration.gps.movementSpeedThreshold, 0},
+    {"gps.movStopDly", ConfigurationParameterType::UINT, &irvineConfiguration.gps.movementStopDelay, 0},
+    {"gps.movInterv", ConfigurationParameterType::UINT, &irvineConfiguration.gps.movementLogInterval, 0},
+    {"gps.stopInterv", ConfigurationParameterType::UINT, &irvineConfiguration.gps.stopLogInterval, 0},
+    {"gps.hPrecOD", ConfigurationParameterType::BOOL, &irvineConfiguration.gps.highPrecisionOnDemand, 0},
+    {"gps.hPrecODDur", ConfigurationParameterType::UINT, &irvineConfiguration.gps.highPrecisionOnDemandDuration, 0},
+    {"gps.jammDet", ConfigurationParameterType::BOOL, &irvineConfiguration.gps.jammingDetection, 0},
+
+    {"obd.protType", ConfigurationParameterType::UCHAR, &irvineConfiguration.obd.protocolType, 0},
+
+    {"dev.batInterv", ConfigurationParameterType::UINT, &irvineConfiguration.device.batteryInterval, 0},
+    {"dev.ignVolThr", ConfigurationParameterType::UINT, &irvineConfiguration.device.ignitionVoltageThreshold, 0},
+    {"dev.ignOffDelay", ConfigurationParameterType::UINT, &irvineConfiguration.device.ignitionOffDelay, 0},
+    {"dev.movInterv", ConfigurationParameterType::UINT, &irvineConfiguration.device.movementLogInterval, 0},
+    {"dev.stopInterv", ConfigurationParameterType::UINT, &irvineConfiguration.device.stopLogInterval, 0},
+    {"dev.pwrOutDet", ConfigurationParameterType::BOOL, &irvineConfiguration.device.powerOutageDetection, 0},
+    {"dev.privBusRide", ConfigurationParameterType::BOOL, &irvineConfiguration.device.privateBusinessRide, 0},
+    {"dev.deviceId", ConfigurationParameterType::STR, &irvineConfiguration.device.deviceId, sizeof(irvineConfiguration.device.deviceId)},
+
+    {"acc.movThre", ConfigurationParameterType::UINT, &irvineConfiguration.accelerometer.movementThreshold, 0},
+    {"acc.movStopDel", ConfigurationParameterType::UINT, &irvineConfiguration.accelerometer.movementStopDelay, 0},
+    {"acc.logEna", ConfigurationParameterType::BOOL, &irvineConfiguration.accelerometer.logEnable, 0},
+    {"acc.crashDetThr", ConfigurationParameterType::UINT, &irvineConfiguration.accelerometer.crashDetectionThreshold, 0},
+    {"acc.towDet", ConfigurationParameterType::BOOL, &irvineConfiguration.accelerometer.towDetection, 0},
+
+    {"bbox.interv", ConfigurationParameterType::UINT, &irvineConfiguration.blackBox.interval, 0},
+
+    {"ble.devMngEn", ConfigurationParameterType::BOOL, &irvineConfiguration.bluetooth.deviceManagementEnable, 0},
+    {"ble[0].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[0].macAddress, sizeof(irvineConfiguration.bluetooth.devices[0].macAddress)},
+    {"ble[1].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[1].macAddress, sizeof(irvineConfiguration.bluetooth.devices[1].macAddress)},
+    {"ble[2].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[2].macAddress, sizeof(irvineConfiguration.bluetooth.devices[2].macAddress)},
+    {"ble[3].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[3].macAddress, sizeof(irvineConfiguration.bluetooth.devices[3].macAddress)},
+    {"ble[4].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[4].macAddress, sizeof(irvineConfiguration.bluetooth.devices[4].macAddress)},
+    {"ble[5].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[5].macAddress, sizeof(irvineConfiguration.bluetooth.devices[5].macAddress)},
+    {"ble[6].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[6].macAddress, sizeof(irvineConfiguration.bluetooth.devices[6].macAddress)},
+    {"ble[7].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[7].macAddress, sizeof(irvineConfiguration.bluetooth.devices[7].macAddress)},
+    {"ble[8].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[8].macAddress, sizeof(irvineConfiguration.bluetooth.devices[8].macAddress)},
+    {"ble[9].mac", ConfigurationParameterType::BYTES, &irvineConfiguration.bluetooth.devices[9].macAddress, sizeof(irvineConfiguration.bluetooth.devices[9].macAddress)},
+    {"ble[0].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[0].type, 0u},
+    {"ble[1].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[1].type, 0u},
+    {"ble[2].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[2].type, 0u},
+    {"ble[3].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[3].type, 0u},
+    {"ble[4].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[4].type, 0u},
+    {"ble[5].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[5].type, 0u},
+    {"ble[6].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[6].type, 0u},
+    {"ble[7].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[7].type, 0u},
+    {"ble[8].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[8].type, 0u},
+    {"ble[9].type", ConfigurationParameterType::UCHAR, &irvineConfiguration.bluetooth.devices[9].type, 0u},
+    {"ble[0].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[0].minInterval, 0u},
+    {"ble[1].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[1].minInterval, 0u},
+    {"ble[2].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[2].minInterval, 0u},
+    {"ble[3].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[3].minInterval, 0u},
+    {"ble[4].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[4].minInterval, 0u},
+    {"ble[5].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[5].minInterval, 0u},
+    {"ble[6].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[6].minInterval, 0u},
+    {"ble[7].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[7].minInterval, 0u},
+    {"ble[8].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[8].minInterval, 0u},
+    {"ble[9].minIval", ConfigurationParameterType::UINT, &irvineConfiguration.bluetooth.devices[9].minInterval, 0u},
+};
+
 bool IrvineConfiguration::begin()
 {
     if (!preferences.begin("irvine_cfg"))
@@ -17,17 +130,10 @@ bool IrvineConfiguration::begin()
         return false;
     }
 
-    loadServerConfig();
-    loadModemConfig();
-    loadSmsConfig();
-    loadTimeConfig();
-    loadVehicleConfig();
-    loadGpsConfig();
-    loadObdConfig();
-    loadDeviceConfig();
-    loadAccelerometerConfig();
-    loadBlackBoxConfig();
-    loadBluetoothConfig();
+    for (auto &parameter : parameters)
+    {
+        loadParameter(parameter);
+    }
 
     bluetooth.devices[0].macAddress[0] = 0xE7;
     bluetooth.devices[0].macAddress[1] = 0xD1;
@@ -109,7 +215,6 @@ bool IrvineConfiguration::begin()
     obd.fuelLevelInterval = 1000u;
     obd.protocolType = ObdProtocolType::AA_AT_THE_END;
 
-
     vehicle.stopLogInterval = 60000u;
     vehicle.movementLogInterval = 5000u;
     vehicle.ignitionSource = VehicleIgnitionSource::VOLTAGE;
@@ -121,255 +226,165 @@ bool IrvineConfiguration::begin()
     return true;
 }
 
-void IrvineConfiguration::loadServerConfig()
-{
-    preferences.getBytes("server.mqttHost", server.mqttHost, sizeof(server.mqttHost));
-    server.mqttPort = preferences.getUShort("server.mqttPort");
-    preferences.getBytes("server.mqttUsername", server.mqttUsername, sizeof(server.mqttUsername));
-    preferences.getBytes("server.mqttPassword", server.mqttPassword, sizeof(server.mqttPassword));
-    preferences.getBytes("server.managementHost", server.managementHost, sizeof(server.managementHost));
-    server.managementPort = preferences.getUShort("server.managementPort");
-    preferences.getBytes("server.managementUsername", server.managementUsername, sizeof(server.managementUsername));
-    preferences.getBytes("server.managementPassword", server.managementPassword, sizeof(server.managementPassword));
-}
-
-void IrvineConfiguration::loadModemConfig()
-{
-    preferences.getBytes("modem.apn", modem.apn, sizeof(modem.apn));
-    preferences.getBytes("modem.apnUsername", modem.apnUsername, sizeof(modem.apnUsername));
-    preferences.getBytes("modem.apnPassword", modem.apnPassword, sizeof(modem.apnPassword));
-    preferences.getBytes("modem.pin", modem.pin, sizeof(modem.pin));
-    modem.nationalRoaming = preferences.getBool("modem.nationalRoaming");
-    modem.internationalRoaming = preferences.getBool("modem.internationalRoaming");
-
-    for (uint8_t k = 0u; k < MODEM_OPERATORS_WHITELIST_LEN; k++)
-    {
-        char key[50u];
-        sprintf(key, "modem.operatorWhitelist[%u]", k);
-        preferences.getBytes(key, modem.operatorsWhitelist[k], sizeof(modem.operatorsWhitelist[k]));
-    }
-    for (uint8_t k = 0u; k < MODEM_OPERATORS_BLACKLIST_LEN; k++)
-    {
-        char key[50u];
-        sprintf(key, "modem.operatorBlacklist[%u]", k);
-        preferences.getBytes(key, modem.operatorsBlacklist[k], sizeof(modem.operatorsBlacklist[k]));
-    }
-}
-
-void IrvineConfiguration::loadSmsConfig()
-{
-    for (uint8_t k = 0u; k < SMS_MNG_ALLOWED_NUMBERS_LEN; k++)
-    {
-        char key[50u];
-        sprintf(key, "sms.mngAllowedNumber[%u]", k);
-        preferences.getBytes(key, sms.mngAllowedNumbers[k], sizeof(sms.mngAllowedNumbers[k]));
-    }
-}
-
-void IrvineConfiguration::loadTimeConfig()
-{
-    time.source = static_cast<TimeSource>(preferences.getUChar("time.source"));
-    preferences.getBytes("time.ntpServer", time.ntpServer, sizeof(time.ntpServer));
-    time.syncInterval = preferences.getUInt("time.syncInterval");
-}
-
-void IrvineConfiguration::loadVehicleConfig()
-{
-    // Add specific loading instructions for each vehicle parameter
-    // Placeholder example for ignition source
-    vehicle.ignitionSource = static_cast<VehicleIgnitionSource>(preferences.getUChar("vehicle.ignitionSource"));
-    // Add the rest of the parameters similarly
-}
-
-void IrvineConfiguration::loadGpsConfig()
-{
-    gps.minimumDistance = preferences.getUInt("gps.minimumDistance");
-    gps.maxInterval = preferences.getUInt("gps.maxInterval");
-    gps.sleepAfterIgnitionOffTimeout = preferences.getUInt("gps.sleepAfterIgnitionOffTimeout");
-    gps.freezePositionDuringStop = preferences.getUChar("gps.freezePositionDuringStop");
-    gps.movementSpeedThreshold = preferences.getUInt("gps.movementSpeedThreshold");
-    gps.movementStopDelay = preferences.getUInt("gps.movementStopDelay");
-    gps.movementLogInterval = preferences.getUInt("gps.movementLogInterval");
-    gps.stopLogInterval = preferences.getUInt("gps.stopLogInterval");
-    gps.highPrecisionOnDemand = preferences.getBool("gps.highPrecisionOnDemand");
-    gps.highPrecisionOnDemandDuration = preferences.getUInt("gps.highPrecisionOnDemandDuration");
-    gps.jammingDetection = preferences.getBool("gps.jammingDetection");
-    // Geofence and other parameters can be loaded similarly
-}
-
-void IrvineConfiguration::loadObdConfig()
-{
-    obd.protocolType = static_cast<ObdProtocolType>(preferences.getUChar("obd.protocol"));
-}
-
-void IrvineConfiguration::loadDeviceConfig()
-{
-    device.batteryInterval = preferences.getUInt("device.batteryInterval");
-    device.ignitionVoltageThreshold = preferences.getUInt("device.ignitionVoltageThreshold");
-    device.ignitionOffDelay = preferences.getUInt("device.ignitionOffDelay");
-    device.movementLogInterval = preferences.getUInt("device.movementLogInterval");
-    device.stopLogInterval = preferences.getUInt("device.stopLogInterval");
-    device.powerOutageDetection = preferences.getBool("device.powerOutageDetection");
-    device.privateBusinessRide = preferences.getBool("device.privateBusinessRide");
-    preferences.getBytes("device.deviceId", device.deviceId, sizeof(device.deviceId));
-}
-
-void IrvineConfiguration::loadAccelerometerConfig()
-{
-    accelerometer.movementThreshold = preferences.getUInt("accelerometer.movementThreshold");
-    accelerometer.movementStopDelay = preferences.getUInt("accelerometer.movementStopDelay");
-    accelerometer.logEnable = preferences.getBool("accelerometer.logEnable");
-    accelerometer.crashDetectionThreshold = preferences.getUInt("accelerometer.crashDetectionThreshold");
-    accelerometer.towDetection = preferences.getBool("accelerometer.towDetection");
-}
-
-void IrvineConfiguration::loadBlackBoxConfig()
-{
-    blackBox.interval = preferences.getUInt("blackBox.interval");
-    // Add specific loading instructions for blackBox parameters
-}
-
-void IrvineConfiguration::loadBluetoothConfig()
-{
-    // Add specific loading instructions for Bluetooth configuration
-    // Placeholder example
-    bluetooth.deviceManagementEnable = preferences.getBool("bluetooth.deviceManagementEnable");
-
-    // Loop through and load each Bluetooth device, if any
-}
-
 void IrvineConfiguration::printConfiguration()
 {
-    StaticJsonDocument<4096> doc;
-
-    JsonObject serverObj = doc.createNestedObject("server");
-    serverObj["mqttHost"] = server.mqttHost;
-    serverObj["mqttPort"] = server.mqttPort;
-    serverObj["mqttUsername"] = server.mqttUsername;
-    serverObj["mqttPassword"] = server.mqttPassword;
-    serverObj["managementHost"] = server.managementHost;
-    serverObj["managementPort"] = server.managementPort;
-    serverObj["managementUsername"] = server.managementUsername;
-    serverObj["managementPassword"] = server.managementPassword;
-
-    JsonObject modemObj = doc.createNestedObject("modem");
-    modemObj["apn"] = modem.apn;
-    modemObj["apnUsername"] = modem.apnUsername;
-    modemObj["apnPassword"] = modem.apnPassword;
-    modemObj["pin"] = modem.pin;
-    modemObj["nationalRoaming"] = modem.nationalRoaming;
-    modemObj["internationalRoaming"] = modem.internationalRoaming;
-
-    JsonArray whitelist = modemObj.createNestedArray("operatorsWhitelist");
-    for (uint8_t i = 0; i < MODEM_OPERATORS_WHITELIST_LEN; ++i)
-    {
-        whitelist.add(modem.operatorsWhitelist[i]);
-    }
-
-    JsonArray blacklist = modemObj.createNestedArray("operatorsBlacklist");
-    for (uint8_t i = 0; i < MODEM_OPERATORS_BLACKLIST_LEN; ++i)
-    {
-        blacklist.add(modem.operatorsBlacklist[i]);
-    }
-
-    JsonObject smsObj = doc.createNestedObject("sms");
-    JsonArray allowedNumbers = smsObj.createNestedArray("managementAllowedNumbers");
-    for (uint8_t i = 0; i < SMS_MNG_ALLOWED_NUMBERS_LEN; ++i)
-    {
-        allowedNumbers.add(sms.mngAllowedNumbers[i]);
-    }
-
-    JsonObject timeObj = doc.createNestedObject("time");
-    timeObj["source"] = static_cast<int>(time.source);
-    timeObj["ntpServer"] = time.ntpServer;
-    timeObj["syncInterval"] = time.syncInterval;
-
-    JsonObject vehicleObj = doc.createNestedObject("vehicle");
-    vehicleObj["ignitionSource"] = static_cast<int>(vehicle.ignitionSource);
-    vehicleObj["movementDetectionSource"] = static_cast<int>(vehicle.movementDetectionSource);
-    vehicleObj["speedSource"] = static_cast<int>(vehicle.speedSource);
-    vehicleObj["movementLogInterval"] = vehicle.movementLogInterval;
-    vehicleObj["stopLogInterval"] = vehicle.stopLogInterval;
-    vehicleObj["fuelLeakDetectionThreshold"] = vehicle.fuelLeakDetectionThreshold;
-    vehicleObj["speedInconsistentDetection"] = vehicle.speedInconsistentDetection;
-    vehicleObj["ignitionLock"] = vehicle.ignitionLock;
-
-    JsonObject gpsObj = doc.createNestedObject("gps");
-    gpsObj["minimumDistance"] = gps.minimumDistance;
-    gpsObj["maxInterval"] = gps.maxInterval;
-    gpsObj["sleepAfterIgnitionOffTimeout"] = gps.sleepAfterIgnitionOffTimeout;
-    gpsObj["freezePositionDuringStop"] = gps.freezePositionDuringStop;
-    gpsObj["movementSpeedThreshold"] = gps.movementSpeedThreshold;
-    gpsObj["movementStopDelay"] = gps.movementStopDelay;
-    gpsObj["movementLogInterval"] = gps.movementLogInterval;
-    gpsObj["stopLogInterval"] = gps.stopLogInterval;
-    gpsObj["highPrecisionOnDemand"] = gps.highPrecisionOnDemand;
-    gpsObj["highPrecisionOnDemandDuration"] = gps.highPrecisionOnDemandDuration;
-    gpsObj["jammingDetection"] = gps.jammingDetection;
-
-    JsonObject obdObj = doc.createNestedObject("obd");
-    obdObj["speedActive"] = obd.speedActive;
-    obdObj["speedInterval"] = obd.speedInterval;
-    obdObj["engineSpeedActive"] = obd.engineSpeedActive;
-    obdObj["engineSpeedInterval"] = obd.engineSpeedInterval;
-    obdObj["voltageActive"] = obd.voltageActive;
-    obdObj["voltageInterval"] = obd.voltageInterval;
-    obdObj["fuelLevelActive"] = obd.fuelLevelActive;
-    obdObj["fuelLevelInterval"] = obd.fuelLevelInterval;
-    obdObj["VINActive"] = obd.VINActive;
-    obdObj["VINInterval"] = obd.VINInterval;
-    obdObj["activeDTCActive"] = obd.activeDTCActive;
-    obdObj["activeDTCInterval"] = obd.activeDTCInterval;
-    obdObj["oilTemperatureActive"] = obd.oilTemperatureActive;
-    obdObj["oilTemperatureInterval"] = obd.oilTemperatureInterval;
-    obdObj["coolantTemperatureActive"] = obd.coolantTemperatureActive;
-    obdObj["coolantTemperatureInterval"] = obd.coolantTemperatureInterval;
-    obdObj["throttlePositionActive"] = obd.throttlePositionActive;
-    obdObj["throttlePositionInterval"] = obd.throttlePositionInterval;
-    obdObj["odometerActive"] = obd.odometerActive;
-    obdObj["odometerInterval"] = obd.odometerInterval;
-
-    JsonObject deviceObj = doc.createNestedObject("device");
-    deviceObj["batteryInterval"] = device.batteryInterval;
-    deviceObj["ignitionVoltageThreshold"] = device.ignitionVoltageThreshold;
-    deviceObj["ignitionOffDelay"] = device.ignitionOffDelay;
-    deviceObj["movementLogInterval"] = device.movementLogInterval;
-    deviceObj["stopLogInterval"] = device.stopLogInterval;
-    deviceObj["powerOutageDetection"] = device.powerOutageDetection;
-    deviceObj["privateBusinessRide"] = device.privateBusinessRide;
-
-    JsonObject accelerometerObj = doc.createNestedObject("accelerometer");
-    accelerometerObj["movementThreshold"] = accelerometer.movementThreshold;
-    accelerometerObj["movementStopDelay"] = accelerometer.movementStopDelay;
-    accelerometerObj["logEnable"] = accelerometer.logEnable;
-    accelerometerObj["crashDetectionThreshold"] = accelerometer.crashDetectionThreshold;
-    accelerometerObj["towDetection"] = accelerometer.towDetection;
-
-    JsonObject blackBoxObj = doc.createNestedObject("blackBox");
-    blackBoxObj["interval"] = blackBox.interval;
-    // Add black box parameters here if any
-    blackBoxObj["parameter1"] = blackBox.parameter1;
-    blackBoxObj["parameter2"] = blackBox.parameter2;
-
-    JsonObject bluetoothObj = doc.createNestedObject("bluetooth");
-    bluetoothObj["deviceManagementEnable"] = bluetooth.deviceManagementEnable;
-    JsonArray devices = bluetoothObj.createNestedArray("devices");
-    for (uint8_t i = 0; i < MAX_BLUETOOTH_DEVICES; ++i)
-    {
-        JsonObject device = devices.createNestedObject();
-        device["type"] = static_cast<int>(bluetooth.devices[i].type);
-        char bt[17];
-        sprintf(bt, "%02x:%02x:%02x:%02x:%02x:%02x",
-                bluetooth.devices[i].macAddress[0u],
-                bluetooth.devices[i].macAddress[1u],
-                bluetooth.devices[i].macAddress[2u],
-                bluetooth.devices[i].macAddress[3u],
-                bluetooth.devices[i].macAddress[4u],
-                bluetooth.devices[i].macAddress[5u]);
-        device["macAddress"] = bt;
-    }
-
     Serial.print("Device configuration:\r\n");
-    serializeJsonPretty(doc, Serial);
+    for (auto &parameter : parameters)
+    {
+        printParameter(parameter);
+    }
+}
+
+bool IrvineConfiguration::setParameter(const char *param, const char *value)
+{
+    for (auto &parameter : parameters)
+    {
+        logger.logPrintF(LogSeverity::INFO, MODULE, "setParameter check : %s : %s", param, parameter.name);
+
+        if (0 == strcmp(param, parameter.name))
+        {
+            logger.logPrintF(LogSeverity::INFO, MODULE, "setParameter: %s : %s", param, value);
+
+            switch (parameter.type)
+            {
+            case ConfigurationParameterType::BYTES:
+            {
+                uint8_t bytes[parameter.len];
+                for (int i = 0; i < parameter.len; i++)
+                {
+                    sscanf(&value[i * 2], "%02hhx", &bytes[i]);
+                }
+                return preferences.putBytes(parameter.name, bytes, parameter.len) == parameter.len;
+            }
+
+            case ConfigurationParameterType::STR:
+                return preferences.putBytes(parameter.name, value, parameter.len) == parameter.len;
+
+            case ConfigurationParameterType::UCHAR:
+            {
+                uint8_t val;
+                if (1 != sscanf(value, "%hhu", &val))
+                {
+                    logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse UCHAR parameter");
+                    return false;
+                }
+                return preferences.putUChar(parameter.name, val) == 1;
+            }
+
+            case ConfigurationParameterType::USHORT:
+            {
+                uint16_t val;
+                if (1 != sscanf(value, "%hu", &val))
+                {
+                    logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse USHORT parameter");
+                    return false;
+                }
+                return preferences.putUShort(parameter.name, val) == 2;
+            }
+
+            case ConfigurationParameterType::UINT:
+            {
+                uint32_t val;
+                if (1 != sscanf(value, "%u", &val))
+                {
+                    logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse UINT parameter");
+                    return false;
+                }
+                return preferences.putUInt(parameter.name, val) == 4;
+            }
+
+            case ConfigurationParameterType::BOOL:
+            {
+                bool val;
+                if (1 != sscanf(value, "%hhu", &val))
+                {
+                    logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse BOOL parameter");
+                    return false;
+                }
+                return preferences.putBool(parameter.name, val) == 1;
+            }
+            default:
+                logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid parameter type (%d) %s", parameter.type, param);
+                return false;
+            }
+        }
+    }
+
+    logger.logPrintF(LogSeverity::WARNING, MODULE, "parameter not found: %s : %s", param, value);
+
+    return false;
+}
+
+void IrvineConfiguration::checkDefaultConfiguration(void)
+{
+}
+
+void IrvineConfiguration::printParameter(ConfigurationParameter &parameter)
+{
+    Serial.print(parameter.name);
+    Serial.print(" = ");
+
+    switch (parameter.type)
+    {
+    case ConfigurationParameterType::STR:
+        Serial.print("\"");
+        Serial.print((const char *)parameter.pointer);
+        Serial.print("\"");
+        break;
+
+    case ConfigurationParameterType::BYTES:
+        for (int k = 0; k < parameter.len; k++)
+        {
+            Serial.printf("%02X", ((uint8_t *)parameter.pointer)[k]);
+        }
+        break;
+
+    case ConfigurationParameterType::UCHAR:
+        Serial.print(*((uint8_t *)parameter.pointer));
+        break;
+
+    case ConfigurationParameterType::USHORT:
+        Serial.print(*((uint16_t *)parameter.pointer));
+        break;
+
+    case ConfigurationParameterType::UINT:
+        Serial.print(*((uint32_t *)parameter.pointer));
+        break;
+
+    case ConfigurationParameterType::BOOL:
+        Serial.print(*((bool *)parameter.pointer) ? "true" : "false");
+        break;
+    }
+
     Serial.print("\r\n");
+}
+
+void IrvineConfiguration::loadParameter(ConfigurationParameter &parameter)
+{
+    switch (parameter.type)
+    {
+    case ConfigurationParameterType::STR:
+        preferences.getBytes(parameter.name, parameter.pointer, parameter.len);
+        break;
+
+    case ConfigurationParameterType::BYTES:
+        preferences.getBytes(parameter.name, parameter.pointer, parameter.len);
+        break;
+
+    case ConfigurationParameterType::UCHAR:
+        *((uint8_t *)parameter.pointer) = preferences.getUChar(parameter.name);
+        break;
+
+    case ConfigurationParameterType::USHORT:
+        *((uint16_t *)parameter.pointer) = preferences.getUShort(parameter.name);
+        break;
+
+    case ConfigurationParameterType::UINT:
+        *((uint32_t *)parameter.pointer) = preferences.getUInt(parameter.name);
+        break;
+
+    case ConfigurationParameterType::BOOL:
+        *((bool *)parameter.pointer) = preferences.getBool(parameter.name);
+        break;
+    }
 }

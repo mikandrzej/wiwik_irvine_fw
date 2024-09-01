@@ -51,6 +51,8 @@ void MqttController::loop()
                     result = mqtt->connect(irvineConfiguration.device.deviceId,
                                            irvineConfiguration.server.mqttUsername,
                                            irvineConfiguration.server.mqttPassword);
+
+                    mqtt->setKeepAlive(5);
                 }
                 else
                 {
@@ -80,6 +82,7 @@ void MqttController::loop()
                     }
                     if (result)
                     {
+                        logger.logPrintF(LogSeverity::INFO, MODULE, "MQTT conneted state");
                         state = MqttState::CONNECTED;
                     }
                 }
@@ -95,11 +98,8 @@ void MqttController::loop()
     case MqttState::CONNECTED:
         if (xSemaphoreTake(modemSemaphore, portMAX_DELAY) == pdTRUE)
         {
-            if (modemManagement.isConnected() && mqtt->connected())
-            {
-                mqtt->loop();
-            }
-            else
+
+            if (!mqtt->loop())
             {
                 state = MqttState::CONNECTING;
             }
@@ -149,13 +149,35 @@ void MqttController::publish(const char *const topic, const uint8_t *const msg, 
 
 void MqttController::messageCallback(char *topic, uint8_t *message, unsigned int messageLength)
 {
+    logger.logPrintF(LogSeverity::INFO, MODULE, "Message callback triggered for topic %s with msg: %s", topic, message);
     for (auto &subscribedTopic : subscribedTopics)
     {
-        // todo optimisation
-        if (strlen(subscribedTopic->topic) <= strlen(topic))
+        const char *subscribedTopicStr = subscribedTopic->topic;
+        size_t subscribedTopicLen = strlen(subscribedTopicStr);
+        size_t topicLen = strlen(topic);
+
+        if (subscribedTopicLen <= topicLen)
         {
-            if (strncmp(subscribedTopic->topic, topic, strlen(subscribedTopic->topic)))
+            // Sprawdź, czy subskrybowany topic zawiera '#' na końcu
+            if (subscribedTopicStr[subscribedTopicLen - 1] == '#')
             {
+                // Sprawdź, czy początek topicu zgadza się z subskrybowanym topicem bez '#'
+                if (strncmp(subscribedTopicStr, topic, subscribedTopicLen - 1) == 0 &&
+                    (topic[subscribedTopicLen - 1] == '/' || topic[subscribedTopicLen - 1] == '\0'))
+                {
+                    logger.logPrintF(LogSeverity::INFO, MODULE, "Message callback triggered for wildcard subscription");
+                    subscribedTopic->callback(topic, message, messageLength);
+                }
+            }
+            else
+            {
+                // Standardowe porównanie topiców bez symbolu '#'
+                if (strncmp(subscribedTopicStr, topic, subscribedTopicLen) == 0 &&
+                    (topic[subscribedTopicLen] == '/' || topic[subscribedTopicLen] == '\0'))
+                {
+                    logger.logPrintF(LogSeverity::INFO, MODULE, "Message callback triggered for exact match subscription");
+                    subscribedTopic->callback(topic, message, messageLength);
+                }
             }
         }
     }

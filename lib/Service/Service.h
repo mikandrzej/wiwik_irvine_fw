@@ -7,10 +7,11 @@ class Service
 public:
     void begin();
 
-    void mqttMessageReceived(char *topic, uint8_t *message, unsigned int length);
+    void mqttSetConfigMessageReceived(char *topic, uint8_t *message, unsigned int length);
 
 private:
-    MqttSubscribedTopic *mqttSubscribedTopic;
+    MqttSubscribedTopic *mqttSubTopicSetConfig;
+    char mqttTopicSetConfig[50];
 };
 
 extern Service service;

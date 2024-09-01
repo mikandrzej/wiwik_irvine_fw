@@ -64,31 +64,6 @@ void BluetoothM52PASTempSensor::parseAdvertisedData(const uint8_t *const data, c
     {
         doNotify = true;
     }
-    else
-    {
-        if (irvineConfiguration.bluetooth.devices[configIndex].maxTemperatureChange > 0.0f)
-        {
-            float temperatureDiff = lastTemperature - temperature;
-            if (temperatureDiff < 0.0f)
-                temperatureDiff *= -1.0f;
-
-            if (temperatureDiff > irvineConfiguration.bluetooth.devices[configIndex].maxTemperatureChange)
-            {
-                doNotify = true;
-            }
-        }
-        if (irvineConfiguration.bluetooth.devices[configIndex].maxHumidityChange > 0.0f)
-        {
-            float humidityDiff = lastHumidity - humidity;
-            if (humidityDiff < 0.0f)
-                humidityDiff *= -1.0f;
-
-            else if (humidityDiff > irvineConfiguration.bluetooth.devices[configIndex].maxHumidityChange)
-            {
-                doNotify = true;
-            }
-        }
-    }
 
     if (doNotify)
     {

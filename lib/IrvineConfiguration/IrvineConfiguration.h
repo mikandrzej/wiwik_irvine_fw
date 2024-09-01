@@ -15,11 +15,31 @@
 #include "BlackBoxConfiguration.h"
 #include "BluetoothConfiguration.h"
 
+enum class ConfigurationParameterType
+{
+    BYTES,
+    STR,
+    UCHAR,
+    USHORT,
+    UINT,
+    BOOL
+};
+
+struct ConfigurationParameter
+{
+    const char *const name;
+    ConfigurationParameterType type;
+    void *pointer;
+    uint32_t len;
+};
+
 class IrvineConfiguration
 {
 public:
     bool begin();
     void printConfiguration();
+
+    bool setParameter(const char *param, const char *value);
 
     ServerConfiguration server;
     ModemConfiguration modem;
@@ -34,17 +54,9 @@ public:
     BluetoothConfiguration bluetooth;
 
 private:
-    void loadServerConfig();
-    void loadModemConfig();
-    void loadSmsConfig();
-    void loadTimeConfig();
-    void loadVehicleConfig();
-    void loadGpsConfig();
-    void loadObdConfig();
-    void loadDeviceConfig();
-    void loadAccelerometerConfig();
-    void loadBlackBoxConfig();
-    void loadBluetoothConfig();
+    void checkDefaultConfiguration(void);
+    void printParameter(ConfigurationParameter &parameter);
+    void loadParameter(ConfigurationParameter &parameter);
 
     Preferences preferences;
 };

@@ -83,6 +83,7 @@ void setup()
   dataLogger.begin();
   irvineConfiguration.begin();
   modemManagement.begin();
+  service.begin();
 
   setCpuFrequencyMhz(240);
   logger.logPrintF(LogSeverity::INFO, MODULE, "CPU freq %d", getCpuFrequencyMhz());

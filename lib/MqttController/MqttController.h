@@ -21,6 +21,7 @@ public:
     char *topic;
     size_t topicLength;
     MqttCallback callback;
+    
 };
 
 class MqttController
