@@ -2,7 +2,6 @@
 
 #include "IrvineConfiguration.h"
 
-#include <GpsController.h>
 #include <CanQueries/UdsVehicleSpeedQuery.h>
 #include <CanQueries/UdsVehicleEngineSpeedQuery.h>
 #include <CanQueries/UdsVehicleFeulLevelQuery.h>
@@ -90,18 +89,18 @@ void VehicleDataReporter::report()
         if (valid)
             len += sprintf(&reportData[len], R"(,"ign":%d)", ingintionOn ? 1 : 0);
 
-        GpsData gpsData = gpsController.getGpsData(&valid);
-        if (valid)
-        {
-            len += sprintf(&reportData[len],
-                           R"(,"gps":{"t":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"vel":%.2f,"sat":%d})",
-                           gpsData.gpsUnixTimestamp,
-                           gpsData.longitude,
-                           gpsData.latitude,
-                           gpsData.altitude,
-                           gpsData.speed,
-                           gpsData.satellites);
-        }
+        // GpsData gpsData = gpsController.getGpsData(&valid);
+        // if (valid)
+        // {
+        //     len += sprintf(&reportData[len],
+        //                    R"(,"gps":{"t":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"vel":%.2f,"sat":%d})",
+        //                    gpsData.gpsUnixTimestamp,
+        //                    gpsData.longitude,
+        //                    gpsData.latitude,
+        //                    gpsData.altitude,
+        //                    gpsData.speed,
+        //                    gpsData.satellites);
+        // }
 
         len += sprintf(&reportData[len], "}");
 

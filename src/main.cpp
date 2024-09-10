@@ -14,13 +14,11 @@
 #include <Logger.h>
 
 #include <TaskBluetooth.h>
-#include <MqttControllerTask.h>
 #include <Service.h>
 #include <ModemManagement.h>
 #include <DataLogger.h>
 #include <TaskDataLogger.h>
 
-#include <TaskGps.h>
 #include <HwConfiguration.h>
 
 #include <TaskCan.h>
@@ -28,6 +26,8 @@
 #include <VehicleDataReporterTask.h>
 
 #include <TaskVehicle.h>
+
+#include <GpsObserver.h>
 
 #include <nvs_flash.h>
 
@@ -41,11 +41,6 @@ uint32_t software_version = 5u;
 StaticTask_t xBleTaskBuffer;
 StackType_t xBleStack[BLE_TASK_STACK_SIZE];
 TaskHandle_t xBleTaskHandle = NULL;
-
-#define MQTT_TASK_STACK_SIZE 4096
-StaticTask_t xMqttTaskBuffer;
-StackType_t xMqttStack[MQTT_TASK_STACK_SIZE];
-TaskHandle_t xMqttTaskHandle = NULL;
 
 #define GPS_TASK_STACK_SIZE 4096
 StaticTask_t xGpsTaskBuffer;
@@ -84,6 +79,7 @@ void setup()
   irvineConfiguration.begin();
   modemManagement.begin();
   service.begin();
+  gpsObserver.begin();
 
   setCpuFrequencyMhz(240);
   logger.logPrintF(LogSeverity::INFO, MODULE, "CPU freq %d", getCpuFrequencyMhz());
@@ -126,79 +122,70 @@ void setup()
 
   Serial.printf("Software version: %u\r\n", software_version);
 
-  xBleTaskHandle = xTaskCreateStaticPinnedToCore(
-      mqttControllerTask,   /* Function that implements the task. */
-      "MQTT",               /* Text name for the task. */
-      MQTT_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
-      (void *)1,            /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,     /* Priority at which the task is created. */
-      xMqttStack,           /* Array to use as the task's stack. */
-      &xMqttTaskBuffer,
-      1); /* Variable to hold the task's data structure. */
+  // xBleTaskHandle = xTaskCreateStaticPinnedToCore(
+  //     taskBluetooth,       /* Function that implements the task. */
+  //     "BLE",               /* Text name for the task. */
+  //     BLE_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+  //     (void *)1,           /* Parameter passed into the task. */
+  //     tskIDLE_PRIORITY,    /* Priority at which the task is created. */
+  //     xBleStack,           /* Array to use as the task's stack. */
+  //     &xBleTaskBuffer,
+  //     1); /* Variable to hold the task's data structure. */
 
-  xMqttTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskBluetooth,       /* Function that implements the task. */
-      "BLE",               /* Text name for the task. */
-      BLE_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
-      (void *)1,           /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,    /* Priority at which the task is created. */
-      xBleStack,           /* Array to use as the task's stack. */
-      &xBleTaskBuffer,
-      1); /* Variable to hold the task's data structure. */
+  // xGpsTaskHandle = xTaskCreateStaticPinnedToCore(
+  //     taskGps,             /* Function that implements the task. */
+  //     "GPS",               /* Text name for the task. */
+  //     GPS_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+  //     (void *)1,           /* Parameter passed into the task. */
+  //     tskIDLE_PRIORITY,    /* Priority at which the task is created. */
+  //     xGpsStack,           /* Array to use as the task's stack. */
+  //     &xGpsTaskBuffer,
+  //     1); /* Variable to hold the task's data structure. */
 
-  xGpsTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskGps,             /* Function that implements the task. */
-      "GPS",               /* Text name for the task. */
-      GPS_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
-      (void *)1,           /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,    /* Priority at which the task is created. */
-      xGpsStack,           /* Array to use as the task's stack. */
-      &xGpsTaskBuffer,
-      1); /* Variable to hold the task's data structure. */
+  // xDataLoggerTaskHandle = xTaskCreateStaticPinnedToCore(
+  //     taskDataLogger,              /* Function that implements the task. */
+  //     "D_LOGGER",                  /* Text name for the task. */
+  //     DATA_LOGGER_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+  //     (void *)1,                   /* Parameter passed into the task. */
+  //     tskIDLE_PRIORITY,            /* Priority at which the task is created. */
+  //     xDataLoggerStack,            /* Array to use as the task's stack. */
+  //     &xDataLoggerTaskBuffer,
+  //     1); /* Variable to hold the task's data structure. */
 
-  xDataLoggerTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskDataLogger,              /* Function that implements the task. */
-      "D_LOGGER",                  /* Text name for the task. */
-      DATA_LOGGER_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
-      (void *)1,                   /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,            /* Priority at which the task is created. */
-      xDataLoggerStack,            /* Array to use as the task's stack. */
-      &xDataLoggerTaskBuffer,
-      1); /* Variable to hold the task's data structure. */
+  // xCanTaskHandle = xTaskCreateStaticPinnedToCore(
+  //     taskCan,             /* Function that implements the task. */
+  //     "CAN",               /* Text name for the task. */
+  //     CAN_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+  //     (void *)1,           /* Parameter passed into the task. */
+  //     tskIDLE_PRIORITY,    /* Priority at which the task is created. */
+  //     xCanStack,           /* Array to use as the task's stack. */
+  //     &xCanTaskBuffer,
+  //     1); /* Variable to hold the task's data structure. */
 
-  xCanTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskCan,             /* Function that implements the task. */
-      "CAN",               /* Text name for the task. */
-      CAN_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
-      (void *)1,           /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,    /* Priority at which the task is created. */
-      xCanStack,           /* Array to use as the task's stack. */
-      &xCanTaskBuffer,
-      1); /* Variable to hold the task's data structure. */
+  // xDrepTaskHandle = xTaskCreateStaticPinnedToCore(
+  //     taskVehicleDataReporter, /* Function that implements the task. */
+  //     "DREP",                  /* Text name for the task. */
+  //     DREP_TASK_STACK_SIZE,    /* Number of indexes in the xStack array. */
+  //     (void *)1,               /* Parameter passed into the task. */
+  //     tskIDLE_PRIORITY,        /* Priority at which the task is created. */
+  //     xDRepStack,              /* Array to use as the task's stack. */
+  //     &xDRepTaskBuffer,
+  //     1); /* Variable to hold the task's data structure. */
 
-  xDrepTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskVehicleDataReporter, /* Function that implements the task. */
-      "DREP",                  /* Text name for the task. */
-      DREP_TASK_STACK_SIZE,    /* Number of indexes in the xStack array. */
-      (void *)1,               /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,        /* Priority at which the task is created. */
-      xDRepStack,              /* Array to use as the task's stack. */
-      &xDRepTaskBuffer,
-      1); /* Variable to hold the task's data structure. */
-
-  xVehicleTaskHandle = xTaskCreateStaticPinnedToCore(
-      taskVehicle,             /* Function that implements the task. */
-      "VEH",                   /* Text name for the task. */
-      VEHICLE_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
-      (void *)1,               /* Parameter passed into the task. */
-      tskIDLE_PRIORITY,        /* Priority at which the task is created. */
-      xVehicleStack,           /* Array to use as the task's stack. */
-      &xVehicleTaskBuffer,
-      1); /* Variable to hold the task's data structure. */
+  // xVehicleTaskHandle = xTaskCreateStaticPinnedToCore(
+  //     taskVehicle,             /* Function that implements the task. */
+  //     "VEH",                   /* Text name for the task. */
+  //     VEHICLE_TASK_STACK_SIZE, /* Number of indexes in the xStack array. */
+  //     (void *)1,               /* Parameter passed into the task. */
+  //     tskIDLE_PRIORITY,        /* Priority at which the task is created. */
+  //     xVehicleStack,           /* Array to use as the task's stack. */
+  //     &xVehicleTaskBuffer,
+  //     1); /* Variable to hold the task's data structure. */
 }
 
 void loop()
 {
   modemManagement.loop();
+  gpsObserver.loop();
   vTaskDelay(100);
 }

@@ -24,33 +24,40 @@ public:
     double speed = 0.0;
     uint64_t gpsUnixTimestamp = 0u;
     uint64_t unixTimestamp = 0u;
+    bool valid = false;
 
     String logData()
     {
         char txt[200];
-        (void)sprintf(txt, "%llu;%u;%u;%f;%f;%f;%f;%llu\r\n",
-                      unixTimestamp,
-                      mode,
-                      satellites,
-                      latitude,
-                      longitude,
-                      altitude,
-                      speed,
-                      gpsUnixTimestamp);
+        if (valid)
+            (void)sprintf(txt, "%llu;%u;%u;%f;%f;%f;%f;%llu\r\n",
+                          unixTimestamp,
+                          mode,
+                          satellites,
+                          latitude,
+                          longitude,
+                          altitude,
+                          speed,
+                          gpsUnixTimestamp);
+        else
+            (void)sprintf(txt, "-");
         return String(txt);
     }
     String logItem() { return "gps"; }
     String logMqttData()
     {
         char msg[500];
-        sprintf(msg, R"({"gt":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"spd":%.2f,"sat":%d,"t":%llu})",
-                gpsUnixTimestamp,
-                longitude,
-                latitude,
-                altitude,
-                speed,
-                satellites,
-                unixTimestamp);
+        if (valid)
+            sprintf(msg, R"({"gt":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"spd":%.2f,"sat":%d,"t":%llu})",
+                    gpsUnixTimestamp,
+                    longitude,
+                    latitude,
+                    altitude,
+                    speed,
+                    satellites,
+                    unixTimestamp);
+        else
+            (void)sprintf(msg, "{}");
 
         return String(msg);
     }

@@ -8,7 +8,6 @@
 #include <CanManager.h>
 #include <CanQueries/UdsVehicleSpeedQuery.h>
 #include <CanQueries/UdsVehicleEngineSpeedQuery.h>
-#include <GpsController.h>
 
 const char MODULE[] = "VEHICLE";
 static esp_adc_cal_characteristics_t adc1_chars;
@@ -23,7 +22,7 @@ void Vehicle::init()
     {
         logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to config ADC1 width");
     }
-    if (ESP_OK != adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11))
+    if (ESP_OK != adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_12))
     {
         logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to config ADC1 width");
     }
@@ -95,8 +94,8 @@ bool Vehicle::isMoving(bool *valid)
         if (valid)
             *valid = false;
         return 0;
-    case VehicleMovementDetectionSource::GPS:
-        gpsController.isMoving(valid);
+    // case VehicleMovementDetectionSource::GPS:
+    //     // gpsController.isMoving(valid);
     case VehicleMovementDetectionSource::VOLTAGE:
         return isEngineRunningBasedOnVoltage(valid);
     }
@@ -111,8 +110,8 @@ float Vehicle::getSpeed(bool *valid)
     {
     case VehicleSpeedSource::CAN:
         return udsVehicleSpeedQuery.getSpeed(valid);
-    case VehicleSpeedSource::GPS:
-        return gpsController.getGpsData(valid).speed;
+    // case VehicleSpeedSource::GPS:
+    //     return gpsController.getGpsData(valid).speed;
     }
 
     if (valid)
@@ -148,7 +147,7 @@ void Vehicle::adcCalibration()
     else if (ret == ESP_OK)
     {
         calibrationEnabled = true;
-        esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 0, &adc1_chars);
+        esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_12, ADC_WIDTH_BIT_12, 0, &adc1_chars);
     }
     else
     {

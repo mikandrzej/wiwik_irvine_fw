@@ -2,40 +2,95 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <freertos/queue.h>
 #include <Arduino.h>
 #include <EgTinyGsm.h>
-
-extern SemaphoreHandle_t modemSemaphore;
+#include <GpsData.h>
+#include <SimpleIntervalTimer.h>
+#include <ModemStatusData.h>
 
 extern EgTinyGsm modem;
 
+using MqttCallback = std::function<void(char *, uint8_t *, unsigned int)>;
+
 enum class ModemManagementState
 {
-    UNINITIALIZED,
     POWER_OFF,
-    APN_DISCONNECTED,
-    INIT_APN,
-    INIT_GPS,
-    APN_CONNECTED,
-    INFINITE_LOOP
+    MODEM_POWERING_ON,
+    MODEM_SLEEP_ON,
+    MODEM_SLEEP_OFF,
+    GPRS_CONNECTING,
+    GPRS_DISCONNECTING,
+    MQTT_CONNECTING,
+    GPS_POWERING_ON,
+    GPS_POWERING_OFF,
+    IDLE,
+    MODEM_ENABLE,
+};
+
+class MqttSubscribedTopic
+{
+public:
+    MqttSubscribedTopic(char *topic, MqttCallback callback);
+    char *topic;
+    size_t topicLength;
+    MqttCallback callback;
 };
 
 class ModemManagement
 {
 public:
     ModemManagement();
-    void begin();
+    bool begin();
     void loop();
+    void subscribe(MqttSubscribedTopic *topic);
 
     bool isConnected();
+    bool requestModemData();
+
+    bool mqttPublish(const char *const topic, const char *const msg, const bool retain = false);
+    bool mqttPublish(const char *const topic, const uint8_t *const msg, uint32_t len, const bool retain = false);
+
+    GpsData& getLastGpsData();
+    GpsData& getLastValidGpsData();
 
 private:
-    ModemManagementState state = ModemManagementState::UNINITIALIZED;
-    String modemName;
-    String modemInfo;
-    String simCcid;
-    String simImsi;
-    bool connected;
+    void checkGpsInterval();
+    void checkModemInfoInterval();
+
+    void mqttMessageCallback(char *topic, uint8_t *message, unsigned int messageLength);
+
+    bool parseGpsData(const String &data);
+
+    void handleGpsData(GpsData &gpsData);
+
+    String getNextSubstring(const String &input, char separator, int *iterator);
+
+    ModemManagementState state = ModemManagementState::POWER_OFF;
+
+    ModemStatusData modemStatus;
+
+    bool modemPowerOnRequest = true;
+    bool modemConnectRequest = true;
+    bool gpsEnabledRequest = true;
+
+    bool gpsEnabled = false;
+    bool modemPoweredOn = false;
+    bool modemConnected = false;
+    bool gprsConnected = false;
+    bool mqttConnected = false;
+
+    SimpleIntervalTimer gpsDataInterval = {1000u};
+    SimpleIntervalTimer modemDataInterval = {1000u};
+
+
+    static SemaphoreHandle_t gpsDataMutex;
+    GpsData lastGpsData = {};
+    GpsData lastValidGpsData = {};
+
+    std::vector<MqttSubscribedTopic *> subscribedTopics;
 };
 
 extern ModemManagement modemManagement;
+
+extern QueueHandle_t modemGpsRxQueue;

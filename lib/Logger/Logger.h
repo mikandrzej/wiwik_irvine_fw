@@ -18,7 +18,7 @@ public:
 
 private:
     void putHeader(const LogSeverity severity, const char *module);
-    LogSeverity currentSeverity = LogSeverity::INFO;
+    LogSeverity currentSeverity = LogSeverity::DEBUG;
     HardwareSerial *serial = nullptr;
 };
 

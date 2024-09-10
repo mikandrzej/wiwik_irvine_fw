@@ -13,7 +13,7 @@ void Service::begin()
     sprintf(mqttTopicSetConfig, "irvine/%s/service/set_config", irvineConfiguration.device.deviceId);
     mqttSubTopicSetConfig = new MqttSubscribedTopic(mqttTopicSetConfig, [this](char *topic, uint8_t *msg, unsigned int len)
                                                     { this->mqttSetConfigMessageReceived(topic, msg, len); });
-    mqttController.subscribe(mqttSubTopicSetConfig);
+    modemManagement.subscribe(mqttSubTopicSetConfig);
 
     logger.logPrintF(LogSeverity::INFO, MODULE, "Module started");
 }

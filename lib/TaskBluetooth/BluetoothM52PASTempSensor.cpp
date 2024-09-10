@@ -26,14 +26,6 @@ BluetoothM52PASTempSensor::BluetoothM52PASTempSensor(const uint16_t configIndex)
 void BluetoothM52PASTempSensor::parseAdvertisedData(const uint8_t *const data, const uint16_t len, int16_t rssi)
 {
     char txt[500];
-    int txt_len = sprintf(txt, "M53PAS (RSSI=%d) data: ", rssi);
-    for (uint16_t k = 0u; k < len; k++)
-    {
-        txt_len += sprintf(&txt[txt_len], "%02X", data[k]);
-    }
-
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, txt);
-    // return;
 
     if (len != sizeof(M52PASAdvertisedDataStruct))
     {
@@ -49,7 +41,7 @@ void BluetoothM52PASTempSensor::parseAdvertisedData(const uint8_t *const data, c
     battery = battery > 100.0f ? 100.0f : battery;
     battery = battery < 0.0f ? 0.0f : battery;
 
-    logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f%% rssi: %d", configIndex, temperature, humidity, battery, rssi);
+    logger.logPrintF(LogSeverity::DEBUG, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f%% rssi: %d", configIndex, temperature, humidity, battery, rssi);
 
     bool doNotify = false;
 
@@ -67,8 +59,6 @@ void BluetoothM52PASTempSensor::parseAdvertisedData(const uint8_t *const data, c
 
     if (doNotify)
     {
-        logger.logPrintF(LogSeverity::INFO, MODULE, "sensor %d temp: %.2f hum: %.2f bat: %.0f%% rssi: %d", configIndex, temperature, humidity, battery, rssi);
-
         M52PASData data(device.getUnixTimestamp(), configIndex, temperature, humidity, battery, rssi);
 
         DataHandler::handleData(data);

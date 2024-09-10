@@ -1,5 +1,5 @@
 #include "DataHandler.h"
-#include <MqttController.h>
+#include <ModemManagement.h>
 #include <Device.h>
 #include <IrvineConfiguration.h>
 #include <stdint.h>
@@ -19,7 +19,7 @@ void DataHandler::handleData(DataLoggable &data)
 
     sprintf(topic, "irvine/%s/measures/%s", irvineConfiguration.device.deviceId, data.logItem().c_str());
 
-    mqttController.publish(topic, data.logMqttData().c_str());
+    modemManagement.mqttPublish(topic, data.logMqttData().c_str());
 
     DataLoggerQueueItem logItem;
     data.logData().getBytes((unsigned char *)logItem.logData, sizeof(logItem.logData));

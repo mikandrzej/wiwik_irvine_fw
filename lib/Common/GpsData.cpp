@@ -16,7 +16,8 @@ GpsData::GpsData(uint8_t mode,
                                            altitude(altitude),
                                            speed(speed),
                                            gpsUnixTimestamp(gpsUnixTimestamp),
-                                           unixTimestamp(unixTimestamp)
+                                           unixTimestamp(unixTimestamp),
+                                           valid(true)
 
 {
 }
