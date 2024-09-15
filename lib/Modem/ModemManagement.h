@@ -11,6 +11,7 @@
 #include <MqttTxItem.h>
 
 extern EgTinyGsm modem;
+extern TinyGsmClient updateClient;
 
 using MqttCallback = std::function<void(char *, uint8_t *, unsigned int)>;
 

@@ -1,6 +1,5 @@
 #include <ModemManagement.h>
 #include <Logger.h>
-#include <EgTinyGsm.h>
 #include <IrvineConfiguration.h>
 #include <TimeLib.h>
 #include <Device.h>
@@ -15,7 +14,8 @@ const char MODULE[] = "MODEM_MNG";
 
 ModemManagement modemManagement;
 EgTinyGsm modem(SerialAT);
-TinyGsmClient mqttClient(modem);
+TinyGsmClient mqttClient(modem, 0);
+TinyGsmClient updateClient(modem, 1);
 PubSubClient mqtt(mqttClient);
 
 SemaphoreHandle_t ModemManagement::gpsDataMutex = xSemaphoreCreateMutex();
@@ -469,6 +469,7 @@ void ModemManagement::tryToSendMqttData()
 
 void ModemManagement::mqttMessageCallback(char *topic, uint8_t *message, unsigned int messageLength)
 {
+    message[messageLength] = '\0';
     logger.logPrintF(LogSeverity::INFO, MODULE, "Message callback triggered for topic %s with msg: %s", topic, message);
     for (auto &subscribedTopic : subscribedTopics)
     {

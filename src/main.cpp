@@ -7,8 +7,6 @@
 #include "EgTinyGsm.h"
 #include "ESP32TimerInterrupt.h"
 
-#include <Update.h>
-
 #include <IrvineConfiguration.h>
 #include <Logger.h>
 
