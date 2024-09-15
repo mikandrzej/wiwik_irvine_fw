@@ -1,7 +1,6 @@
 #include <Arduino.h>
 
 #include <WiFi.h>
-#include <SPI.h>
 
 #include <driver/twai.h>
 
@@ -28,6 +27,7 @@
 #include <TaskVehicle.h>
 
 #include <GpsObserver.h>
+#include <Queues.h>
 
 #include <nvs_flash.h>
 
@@ -64,20 +64,24 @@ TaskHandle_t xVehicleTaskHandle = NULL;
 
 void setup()
 {
+  if (!queues.begin())
+  {
+    logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to init queues");
+  }
+
   WiFi.mode(WIFI_OFF);
 
-  SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
   Serial.begin(CONSOLE_UART_BAUD);
 
   logger.begin(&Serial);
-  dataLogger.begin();
   irvineConfiguration.begin();
+  dataLogger.begin();
   modemManagement.begin();
   service.begin();
   gpsObserver.begin();
 
   setCpuFrequencyMhz(240);
-  
+
   logger.logPrintF(LogSeverity::INFO, MODULE, "CPU freq %d", getCpuFrequencyMhz());
 
   logger.logPrintF(LogSeverity::INFO, MODULE, "Application started");

@@ -2,8 +2,6 @@
 
 #include <stdint.h>
 
-#include <DataLoggable.h>
-
 class GpsData
 {
 public:

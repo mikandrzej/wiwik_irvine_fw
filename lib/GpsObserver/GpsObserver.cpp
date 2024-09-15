@@ -5,6 +5,7 @@
 #include <IrvineConfiguration.h>
 
 #include <DataHandler.h>
+#include <Queues.h>
 
 const char MODULE[] = "GPS_OBS";
 
@@ -19,10 +20,10 @@ void GpsObserver::loop()
 {
     GpsData gpsData;
 
-    if (!modemGpsRxQueue)
+    if (!queues.modemGpsRxQueue)
         return;
 
-    if (xQueueReceive(modemGpsRxQueue, &gpsData, 0))
+    if (xQueueReceive(queues.modemGpsRxQueue, &gpsData, 0))
     {
         handleNewGpsData(gpsData);
     }

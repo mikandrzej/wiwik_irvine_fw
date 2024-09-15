@@ -6,16 +6,9 @@
 #include <Device.h>
 #include <HwConfiguration.h>
 #include <PubSubClient.h>
+#include <Queues.h>
 
 const char MODULE[] = "MODEM_MNG";
-
-#define MODEM_GPS_RX_QUEUE_LENGTH 1
-#define MODEM_GPS_RX_ITEM_SIZE sizeof(GpsData)
-QueueHandle_t modemGpsRxQueue;
-
-#define MODEM_MQTT_TX_QUEUE_LENGTH 100
-#define MODEM_MQTT_TX_ITEM_SIZE sizeof(MqttTxItem)
-QueueHandle_t modemMqttTxQueue;
 
 #define SerialAT Serial1
 #define MODEM_UART_BAUD 115200
@@ -43,15 +36,6 @@ bool ModemManagement::begin()
     mqtt.setServer(irvineConfiguration.server.mqttHost, irvineConfiguration.server.mqttPort);
     mqtt.setCallback([this](char *topic, uint8_t *msg, unsigned int len)
                      { this->mqttMessageCallback(topic, msg, len); });
-
-    modemGpsRxQueue = xQueueCreate(MODEM_GPS_RX_QUEUE_LENGTH, MODEM_GPS_RX_ITEM_SIZE);
-    if (!modemGpsRxQueue)
-        return false;
-
-    modemMqttTxQueue = xQueueCreate(MODEM_MQTT_TX_QUEUE_LENGTH, MODEM_MQTT_TX_ITEM_SIZE);
-    if (!modemMqttTxQueue)
-        return false;
-
     return true;
 }
 
@@ -370,7 +354,7 @@ void ModemManagement::subscribe(MqttSubscribedTopic *topic)
 
 bool ModemManagement::mqttPublish(MqttTxItem &txItem)
 {
-    return pdTRUE == xQueueSend(modemMqttTxQueue, &txItem, 0);
+    return pdTRUE == xQueueSend(queues.modemMqttTxQueue, &txItem, 0);
 }
 
 void ModemManagement::checkGpsInterval()
@@ -379,7 +363,7 @@ void ModemManagement::checkGpsInterval()
     {
         parseGpsData(modem.getGPSraw());
 
-        xQueueSend(modemGpsRxQueue, &this->lastGpsData, 0);
+        xQueueSend(queues.modemGpsRxQueue, &this->lastGpsData, 0);
     }
 }
 
@@ -472,12 +456,12 @@ void ModemManagement::tryToSendMqttData()
     if (mqttConnected)
     {
         MqttTxItem item;
-        if (pdTRUE == xQueuePeek(modemMqttTxQueue, &item, 0))
+        if (pdTRUE == xQueuePeek(queues.modemMqttTxQueue, &item, 0))
         {
             if (mqtt.publish(item.topic, item.msg, item.retain))
             {
                 logger.logPrintF(LogSeverity::DEBUG, MODULE, "Published MQTT data to topic: %s", item.topic);
-                xQueueReceive(modemMqttTxQueue, &item, 0);
+                xQueueReceive(queues.modemMqttTxQueue, &item, 0);
             }
         }
     }

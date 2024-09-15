@@ -6,6 +6,7 @@
 
 #include "Logger.h"
 #include <HwConfiguration.h>
+#include <MqttPublisher.h>
 
 const char MODULE[] = "D_LOGGER";
 
@@ -25,6 +26,9 @@ void DataLogger::begin()
     //                                      dataLoggerQueueBuffer,
     //                                      &dataLoggerStaticQueue);
     dataLoggerQueue = xQueueCreate(DATA_LOGGER_QUEUE_LENGTH, DATA_LOGGER_ITEM_SIZE);
+
+    SPI.begin(BOARD_SCK_PIN, BOARD_MISO_PIN, BOARD_MOSI_PIN);
+    pinMode(BOARD_SD_CS_PIN, OUTPUT);
 
     if (!SD.begin(BOARD_SD_CS_PIN, SPI))
     {
@@ -58,8 +62,12 @@ void DataLogger::begin()
     }
     logger.logPrintF(LogSeverity::INFO, MODULE, "SD card type: %s", cardTypeStr);
 
-    cardSize = SD.cardSize() / (1024 * 1024);
-    logger.logPrintF(LogSeverity::INFO, MODULE, "SD Card Size: %lluMB\n", cardSize);
+    cardSize = SD.cardSize();
+    logger.logPrintF(LogSeverity::INFO, MODULE, "SD Card Size: %lluMB\n", cardSize / (1024 * 1024));
+
+    uint64_t used_space = SD.usedBytes();
+    uint64_t total_space = SD.totalBytes();
+    logger.logPrintF(LogSeverity::INFO, MODULE, "SD Card space: %llu / %lluMB\n", used_space / (1024 * 1024), total_space / (1024 * 1024));
 
     if (!SD.mkdir(logPathPrefix))
     {
@@ -70,6 +78,8 @@ void DataLogger::begin()
     logger.logPrintF(LogSeverity::INFO, MODULE, "Module init OK");
 
     initialized = true;
+
+    MqttPublisher::publishSdData(used_space, total_space, cardSize);
 }
 
 void DataLogger::logData(DataLoggerQueueItem &data)

@@ -8,6 +8,7 @@
 #include <GpsData.h>
 #include <SimpleIntervalTimer.h>
 #include <ModemStatusData.h>
+#include <MqttTxItem.h>
 
 extern EgTinyGsm modem;
 
@@ -37,15 +38,6 @@ public:
     MqttCallback callback;
 };
 
-#define MQTT_TOPIC_MAX_LEN 100u
-#define MQTT_MSG_MAX_LEN 300u
-
-struct MqttTxItem
-{
-    char topic[MQTT_TOPIC_MAX_LEN] = {0};
-    char msg[MQTT_MSG_MAX_LEN] = {0};
-    bool retain = false;
-};
 
 class ModemManagement
 {
@@ -96,5 +88,3 @@ private:
 };
 
 extern ModemManagement modemManagement;
-
-extern QueueHandle_t modemGpsRxQueue;
