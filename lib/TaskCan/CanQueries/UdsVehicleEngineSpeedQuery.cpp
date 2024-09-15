@@ -36,8 +36,6 @@ bool UdsVehicleEngineSpeedQuery::parseCurrDataResponse(uint8_t dataLen, uint8_t 
     lastValue = (float)(((uint16_t)data[0u] << 8) | data[1]) / 4.0f;
     valueReceived = true;
 
-    // DataHandler::handleData(*this);
-
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "UDS Engine speed: %u", lastValue);
 
     return true;

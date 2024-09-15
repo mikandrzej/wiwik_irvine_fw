@@ -16,7 +16,7 @@ void taskDataLogger(void *)
     {
         if (xQueueReceive(dataLoggerQueue,
                           &receivedItem,
-                          pdMS_TO_TICKS(10000)) == pdPASS)
+                          portMAX_DELAY) == pdPASS)
         {
             dataLogger.logData(receivedItem);
         }

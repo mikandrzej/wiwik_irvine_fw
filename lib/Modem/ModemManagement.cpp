@@ -13,6 +13,10 @@ const char MODULE[] = "MODEM_MNG";
 #define MODEM_GPS_RX_ITEM_SIZE sizeof(GpsData)
 QueueHandle_t modemGpsRxQueue;
 
+#define MODEM_MQTT_TX_QUEUE_LENGTH 100
+#define MODEM_MQTT_TX_ITEM_SIZE sizeof(MqttTxItem)
+QueueHandle_t modemMqttTxQueue;
+
 #define SerialAT Serial1
 #define MODEM_UART_BAUD 115200
 
@@ -43,6 +47,12 @@ bool ModemManagement::begin()
     modemGpsRxQueue = xQueueCreate(MODEM_GPS_RX_QUEUE_LENGTH, MODEM_GPS_RX_ITEM_SIZE);
     if (!modemGpsRxQueue)
         return false;
+
+    modemMqttTxQueue = xQueueCreate(MODEM_MQTT_TX_QUEUE_LENGTH, MODEM_MQTT_TX_ITEM_SIZE);
+    if (!modemMqttTxQueue)
+        return false;
+
+    return true;
 }
 
 void ModemManagement::loop()
@@ -177,53 +187,6 @@ void ModemManagement::loop()
         if (modem.isNetworkConnected())
         {
 
-            int yearNetwork;
-            int monthNetwork;
-            int dayNetwork;
-            int hourNetwork;
-            int minuteNetwork;
-            int secondNetwork;
-            float timezoneNetwork;
-            if (true == modem.getNetworkTime(
-                            &yearNetwork,
-                            &monthNetwork,
-                            &dayNetwork,
-                            &hourNetwork,
-                            &minuteNetwork,
-                            &secondNetwork,
-                            &timezoneNetwork))
-            {
-
-                tmElements_t tm;
-
-                tm.Day = dayNetwork;
-                tm.Month = monthNetwork;
-                tm.Year = yearNetwork - 1970;
-                tm.Hour = hourNetwork;
-                tm.Minute = minuteNetwork;
-                tm.Second = secondNetwork;
-
-                uint64_t unixTimestamp = makeTime(tm);
-
-                // offset timezone
-                unixTimestamp -= (int)timezoneNetwork * 60 * 60;
-                device.updateGsmTime(unixTimestamp);
-
-                logger.logPrintF(LogSeverity::DEBUG, MODULE, "time %d-%d-%d %d:%d:%d timezone %f unix:%llu",
-                                 yearNetwork,
-                                 monthNetwork,
-                                 dayNetwork,
-                                 hourNetwork,
-                                 minuteNetwork,
-                                 secondNetwork,
-                                 timezoneNetwork,
-                                 unixTimestamp);
-            }
-            else
-            {
-                logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to get timestamp from GSM");
-            }
-
             if (modem.gprsConnect(irvineConfiguration.modem.apn,
                                   irvineConfiguration.modem.apnUsername,
                                   irvineConfiguration.modem.apnPassword))
@@ -347,7 +310,9 @@ void ModemManagement::loop()
             gprsConnected = modem.isGprsConnected();
             mqttConnected = mqtt.loop();
 
-            logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPRS: %d, MQTT: %d, GPS: %d", gprsConnected, mqttConnected, gpsEnabled);
+            tryToSendMqttData();
+
+            // logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPRS: %d, MQTT: %d, GPS: %d", gprsConnected, mqttConnected, gpsEnabled);
 
             checkModemInfoInterval();
             checkGpsInterval();
@@ -403,18 +368,9 @@ void ModemManagement::subscribe(MqttSubscribedTopic *topic)
     subscribedTopics.push_back(topic);
 }
 
-bool ModemManagement::isConnected()
+bool ModemManagement::mqttPublish(MqttTxItem &txItem)
 {
-}
-
-bool ModemManagement::mqttPublish(const char *const topic, const char *const msg, const bool retain)
-{
-    return false;
-}
-
-bool ModemManagement::mqttPublish(const char *const topic, const uint8_t *const msg, uint32_t len, const bool retain)
-{
-    return false;
+    return pdTRUE == xQueueSend(modemMqttTxQueue, &txItem, 0);
 }
 
 void ModemManagement::checkGpsInterval()
@@ -424,8 +380,6 @@ void ModemManagement::checkGpsInterval()
         parseGpsData(modem.getGPSraw());
 
         xQueueSend(modemGpsRxQueue, &this->lastGpsData, 0);
-
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS data: %s", lastGpsData.logData().c_str());
     }
 }
 
@@ -442,6 +396,54 @@ void ModemManagement::checkModemInfoInterval()
         // logger.logPrintF(LogSeverity::DEBUG, MODULE, "GSM regStatus %d", modem.getRegistrationStatus());
         // logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem temperature %.1f", modem.getTemperature());
         // logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem voltage %u", modem.getBattVoltage());
+
+        int yearNetwork;
+        int monthNetwork;
+        int dayNetwork;
+        int hourNetwork;
+        int minuteNetwork;
+        int secondNetwork;
+        float timezoneNetwork;
+
+        if (true == modem.getNetworkTime(
+                        &yearNetwork,
+                        &monthNetwork,
+                        &dayNetwork,
+                        &hourNetwork,
+                        &minuteNetwork,
+                        &secondNetwork,
+                        &timezoneNetwork))
+        {
+
+            tmElements_t tm;
+
+            tm.Day = dayNetwork;
+            tm.Month = monthNetwork;
+            tm.Year = yearNetwork - 1970;
+            tm.Hour = hourNetwork;
+            tm.Minute = minuteNetwork;
+            tm.Second = secondNetwork;
+
+            uint64_t unixTimestamp = makeTime(tm);
+
+            // offset timezone
+            unixTimestamp -= (int)timezoneNetwork * 60 * 60;
+            device.updateGsmTime(unixTimestamp);
+
+            logger.logPrintF(LogSeverity::DEBUG, MODULE, "time %d-%d-%d %d:%d:%d timezone %f unix:%llu",
+                             yearNetwork,
+                             monthNetwork,
+                             dayNetwork,
+                             hourNetwork,
+                             minuteNetwork,
+                             secondNetwork,
+                             timezoneNetwork,
+                             unixTimestamp);
+        }
+        else
+        {
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to get timestamp from GSM");
+        }
 
         modem.sendAT(GF("+CPSI?"));
         if (modem.waitResponse(GF("+CPSI:")) == 1)
@@ -461,6 +463,22 @@ void ModemManagement::checkModemInfoInterval()
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Network type: %s", modemStatus.gsmNetworkType.c_str());
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Operator: %s", modemStatus.gsmOperator.c_str());
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Frequency: %s", modemStatus.gsmFrequency.c_str());
+        }
+    }
+}
+
+void ModemManagement::tryToSendMqttData()
+{
+    if (mqttConnected)
+    {
+        MqttTxItem item;
+        if (pdTRUE == xQueuePeek(modemMqttTxQueue, &item, 0))
+        {
+            if (mqtt.publish(item.topic, item.msg, item.retain))
+            {
+                logger.logPrintF(LogSeverity::DEBUG, MODULE, "Published MQTT data to topic: %s", item.topic);
+                xQueueReceive(modemMqttTxQueue, &item, 0);
+            }
         }
     }
 }
@@ -579,6 +597,7 @@ bool ModemManagement::parseGpsData(const String &data)
         tm.Second = second;
 
         gpsUnixTimestamp = makeTime(tm);
+        device.updateGpsTime(gpsUnixTimestamp);
 
         altitude = getNextSubstring(data, ',', &iterator).toDouble();
         double speed_knots = getNextSubstring(data, ',', &iterator).toDouble();
@@ -605,62 +624,6 @@ bool ModemManagement::parseGpsData(const String &data)
     }
 
     return valid;
-}
-
-void ModemManagement::handleGpsData(GpsData &gpsData)
-{
-    // logger.logPrintF(LogSeverity::DEBUG, MODULE, "Gps data mode:%u, sat:%u, %f %f %f, speed:%f, timestamp: %llu",
-    //                  gpsData.mode,
-    //                  gpsData.satellites,
-    //                  gpsData.latitude,
-    //                  gpsData.longitude,
-    //                  gpsData.altitude,
-    //                  gpsData.speed,
-    //                  gpsData.unixTimestamp);
-
-    // if (firstShot)
-    // {
-    //     firstShot = false;
-    //     publishNewData(gpsData);
-    // }
-    // else
-    // {
-    //     float distance = getDistanceFromLastShot(gpsData);
-    //     logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS distance from last shot: %.1f", distance);
-    //     if (distance >= irvineConfiguration.gps.minimumDistance)
-    //     {
-    //         moving = true;
-    //     }
-    //     else
-    //     {
-    //         moving = false;
-    //     }
-
-    //     if (moving)
-    //     {
-    //         publishNewData(gpsData);
-    //     }
-    //     else
-    //     {
-    //         const uint32_t diff = millis() - lastShotTimestamp;
-    //         if (diff >= irvineConfiguration.gps.maxInterval)
-    //         {
-    //             if (irvineConfiguration.gps.freezePositionDuringStop)
-    //             {
-    //                 GpsData tempData = lastReceivedData;
-    //                 lastReceivedData = gpsData;
-    //                 lastReceivedData.altitude = tempData.altitude;
-    //                 lastReceivedData.latitude = tempData.latitude;
-    //                 lastReceivedData.longitude = tempData.longitude;
-    //                 publishNewData(lastReceivedData);
-    //             }
-    //             else
-    //             {
-    //                 publishNewData(gpsData);
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 String ModemManagement::getNextSubstring(const String &input, char separator, int *iterator)

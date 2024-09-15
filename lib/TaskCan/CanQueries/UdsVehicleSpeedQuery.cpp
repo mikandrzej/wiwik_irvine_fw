@@ -36,12 +36,7 @@ bool UdsVehicleSpeedQuery::parseCurrDataResponse(uint8_t dataLen, uint8_t *data)
     lastValue = data[0u];
     valueReceived = true;
 
-    // DataHandler::handleData(*this);
-
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "UDS Speed: %u", lastValue);
-
-    
-
 
     return true;
 }

@@ -14,6 +14,6 @@ void taskCan(void *)
     while (1)
     {
         canManager.loop();
-        vTaskDelay(1);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

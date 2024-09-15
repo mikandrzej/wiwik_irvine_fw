@@ -4,6 +4,8 @@
 #include <ModemManagement.h>
 #include <IrvineConfiguration.h>
 
+#include <DataHandler.h>
+
 const char MODULE[] = "GPS_OBS";
 
 GpsObserver gpsObserver;
@@ -22,17 +24,24 @@ void GpsObserver::loop()
 
     if (xQueueReceive(modemGpsRxQueue, &gpsData, 0))
     {
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS data: %s", gpsData.logData().c_str());
-
         handleNewGpsData(gpsData);
-
-        lastReceivedData = gpsData;
     }
+}
+
+bool GpsObserver::isMoving(bool *valid)
+{
+    if (valid)
+        *valid = (millis() - lastShotTimestamp) < 10000;
+    return moving;
+}
+
+GpsData &GpsObserver::getLastGpsData()
+{
+    return lastReceivedData;
 }
 
 void GpsObserver::handleNewGpsData(GpsData &gpsData)
 {
-    
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Gps data mode:%u, sat:%u, %f %f %f, speed:%f, timestamp: %llu",
                      gpsData.mode,
                      gpsData.satellites,
@@ -45,13 +54,12 @@ void GpsObserver::handleNewGpsData(GpsData &gpsData)
     if (firstMeasure)
     {
         firstMeasure = false;
-        // publishNewData(gpsData);
     }
     else
     {
         float distance = getDistanceFromLastShot(gpsData);
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS distance from last shot: %.1f", distance);
-        if (distance >= irvineConfiguration.gps.minimumDistance)
+        if (distance >= (float)irvineConfiguration.gps.minimumDistance)
         {
             moving = true;
         }
@@ -60,30 +68,7 @@ void GpsObserver::handleNewGpsData(GpsData &gpsData)
             moving = false;
         }
 
-        if (moving)
-        {
-            // publishNewData(gpsData);
-        }
-        else
-        {
-            const uint32_t diff = millis() - lastShotTimestamp;
-            if (diff >= irvineConfiguration.gps.maxInterval)
-            {
-                if (irvineConfiguration.gps.freezePositionDuringStop)
-                {
-                    GpsData tempData = lastReceivedData;
-                    lastReceivedData = gpsData;
-                    lastReceivedData.altitude = tempData.altitude;
-                    lastReceivedData.latitude = tempData.latitude;
-                    lastReceivedData.longitude = tempData.longitude;
-                    // publishNewData(lastReceivedData);
-                }
-                else
-                {
-                    // publishNewData(gpsData);
-                }
-            }
-        }
+        lastReceivedData = gpsData;
     }
 }
 

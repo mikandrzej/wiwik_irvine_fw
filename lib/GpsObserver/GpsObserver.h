@@ -7,6 +7,8 @@ class GpsObserver
 public:
     bool begin();
     void loop();
+    bool isMoving(bool *valid = nullptr);
+    GpsData& getLastGpsData();
 
 private:
     void handleNewGpsData(GpsData &gpsData);

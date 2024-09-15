@@ -37,6 +37,16 @@ public:
     MqttCallback callback;
 };
 
+#define MQTT_TOPIC_MAX_LEN 100u
+#define MQTT_MSG_MAX_LEN 300u
+
+struct MqttTxItem
+{
+    char topic[MQTT_TOPIC_MAX_LEN] = {0};
+    char msg[MQTT_MSG_MAX_LEN] = {0};
+    bool retain = false;
+};
+
 class ModemManagement
 {
 public:
@@ -45,24 +55,19 @@ public:
     void loop();
     void subscribe(MqttSubscribedTopic *topic);
 
-    bool isConnected();
-    bool requestModemData();
+    bool mqttPublish(MqttTxItem &txItem);
 
-    bool mqttPublish(const char *const topic, const char *const msg, const bool retain = false);
-    bool mqttPublish(const char *const topic, const uint8_t *const msg, uint32_t len, const bool retain = false);
-
-    GpsData& getLastGpsData();
-    GpsData& getLastValidGpsData();
+    GpsData &getLastGpsData();
+    GpsData &getLastValidGpsData();
 
 private:
     void checkGpsInterval();
     void checkModemInfoInterval();
+    void tryToSendMqttData();
 
     void mqttMessageCallback(char *topic, uint8_t *message, unsigned int messageLength);
 
     bool parseGpsData(const String &data);
-
-    void handleGpsData(GpsData &gpsData);
 
     String getNextSubstring(const String &input, char separator, int *iterator);
 
@@ -82,7 +87,6 @@ private:
 
     SimpleIntervalTimer gpsDataInterval = {1000u};
     SimpleIntervalTimer modemDataInterval = {1000u};
-
 
     static SemaphoreHandle_t gpsDataMutex;
     GpsData lastGpsData = {};

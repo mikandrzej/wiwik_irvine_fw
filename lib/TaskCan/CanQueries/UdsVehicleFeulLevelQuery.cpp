@@ -39,8 +39,6 @@ bool UdsVehicleFuelLevelQuery::parseCurrDataResponse(uint8_t dataLen, uint8_t *d
     lastValue = (float)value / 2.55f;
     valueReceived = true;
 
-    // DataHandler::handleData(*this);
-
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "UDS FuelLevel: %f", lastValue);
 
     return true;

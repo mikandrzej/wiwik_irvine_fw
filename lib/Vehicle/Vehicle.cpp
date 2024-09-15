@@ -8,6 +8,7 @@
 #include <CanManager.h>
 #include <CanQueries/UdsVehicleSpeedQuery.h>
 #include <CanQueries/UdsVehicleEngineSpeedQuery.h>
+#include <GpsObserver.h>
 
 const char MODULE[] = "VEHICLE";
 static esp_adc_cal_characteristics_t adc1_chars;
@@ -94,8 +95,8 @@ bool Vehicle::isMoving(bool *valid)
         if (valid)
             *valid = false;
         return 0;
-    // case VehicleMovementDetectionSource::GPS:
-    //     // gpsController.isMoving(valid);
+    case VehicleMovementDetectionSource::GPS:
+        return gpsObserver.isMoving(valid);
     case VehicleMovementDetectionSource::VOLTAGE:
         return isEngineRunningBasedOnVoltage(valid);
     }
@@ -110,8 +111,13 @@ float Vehicle::getSpeed(bool *valid)
     {
     case VehicleSpeedSource::CAN:
         return udsVehicleSpeedQuery.getSpeed(valid);
-    // case VehicleSpeedSource::GPS:
-    //     return gpsController.getGpsData(valid).speed;
+    case VehicleSpeedSource::GPS:
+    {
+        GpsData gpsData = gpsObserver.getLastGpsData();
+        if (valid)
+            *valid = gpsData.valid;
+        return gpsData.speed;
+    }
     }
 
     if (valid)

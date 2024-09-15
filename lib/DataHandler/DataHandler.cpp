@@ -12,14 +12,16 @@ const char MODULE[] = "DATA_HDL";
 
 void DataHandler::handleData(DataLoggable &data)
 {
-    char topic[100];
+    MqttTxItem mqttTxItem;
 
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "irvine/%s/measures/%s", irvineConfiguration.device.deviceId, data.logItem().c_str());
     logger.logPrintF(LogSeverity::DEBUG, MODULE, "data: %s", data.logMqttData().c_str());
 
-    sprintf(topic, "irvine/%s/measures/%s", irvineConfiguration.device.deviceId, data.logItem().c_str());
+    snprintf(mqttTxItem.topic, sizeof(mqttTxItem.topic), "irvine/%s/measures/%s", irvineConfiguration.device.deviceId, data.logItem().c_str());
+    strncpy(mqttTxItem.msg, data.logMqttData().c_str(), sizeof(mqttTxItem.msg));
+    data.logMqttData().getBytes((unsigned char *)mqttTxItem.msg, sizeof(mqttTxItem.msg));
 
-    modemManagement.mqttPublish(topic, data.logMqttData().c_str());
+    modemManagement.mqttPublish(mqttTxItem);
 
     DataLoggerQueueItem logItem;
     data.logData().getBytes((unsigned char *)logItem.logData, sizeof(logItem.logData));

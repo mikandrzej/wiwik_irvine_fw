@@ -15,16 +15,19 @@ uint64_t Device::getUnixTimestamp()
         {
             return calculateUnixTimestamp(gpsUnixTime, gpsUnixTimeTimestamp);
         }
+        break;
     case TimeSource::GSM:
         if (gsmUnixTime > 0)
         {
             return calculateUnixTimestamp(gsmUnixTime, gsmUnixTimeTimestamp);
         }
+        break;
     case TimeSource::NTP:
         if (ntpUnixTime > 0)
         {
             return calculateUnixTimestamp(ntpUnixTime, ntpUnixTimeTimestamp);
         }
+        break;
     }
 
     return getFallbackUnixTimestamp();

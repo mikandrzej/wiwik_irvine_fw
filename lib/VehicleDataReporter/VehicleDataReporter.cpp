@@ -10,6 +10,8 @@
 #include <Device.h>
 #include <Vehicle.h>
 
+#include <GpsObserver.h>
+
 #include <Logger.h>
 
 const char MODULE[] = "DREP";
@@ -89,22 +91,20 @@ void VehicleDataReporter::report()
         if (valid)
             len += sprintf(&reportData[len], R"(,"ign":%d)", ingintionOn ? 1 : 0);
 
-        // GpsData gpsData = gpsController.getGpsData(&valid);
-        // if (valid)
-        // {
-        //     len += sprintf(&reportData[len],
-        //                    R"(,"gps":{"t":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"vel":%.2f,"sat":%d})",
-        //                    gpsData.gpsUnixTimestamp,
-        //                    gpsData.longitude,
-        //                    gpsData.latitude,
-        //                    gpsData.altitude,
-        //                    gpsData.speed,
-        //                    gpsData.satellites);
-        // }
+        GpsData gpsData = gpsObserver.getLastGpsData();
+        if (gpsData.valid)
+        {
+            len += sprintf(&reportData[len],
+                           R"(,"gps":{"t":%llu,"lng":%.5f,"lat":%.5f,"alt":%.1f,"vel":%.2f,"sat":%d})",
+                           gpsData.gpsUnixTimestamp,
+                           gpsData.longitude,
+                           gpsData.latitude,
+                           gpsData.altitude,
+                           gpsData.speed,
+                           gpsData.satellites);
+        }
 
         len += sprintf(&reportData[len], "}");
-
-
 
         savedlogData = String(reportData);
         DataHandler::handleData(*this);
