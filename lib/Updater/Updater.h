@@ -3,7 +3,7 @@
 class Updater
 {
 public:
-    bool updateTrigger(const char *url);
+    bool updateTrigger(const char *server, const char *path);
 };
 
 extern Updater updater;

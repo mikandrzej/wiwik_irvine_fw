@@ -78,8 +78,8 @@ void Service::mqttUpdateMessageReceived(char *topic, uint8_t *message, unsigned 
         logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to parse JSON: %s", error.c_str());
         return;
     }
-    if (doc.containsKey("url"))
+    if (doc.containsKey("host") && doc.containsKey("path"))
     {
-        updater.updateTrigger(doc["url"].as<const char *>());
+        updater.updateTrigger(doc["host"].as<const char *>(), doc["path"].as<const char *>());
     }
 }

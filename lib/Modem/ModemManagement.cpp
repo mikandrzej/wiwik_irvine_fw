@@ -16,6 +16,7 @@ ModemManagement modemManagement;
 EgTinyGsm modem(SerialAT);
 TinyGsmClient mqttClient(modem, 0);
 TinyGsmClient updateClient(modem, 1);
+HttpClient httpClient(updateClient, "firmware.7frost.com");
 PubSubClient mqtt(mqttClient);
 
 SemaphoreHandle_t ModemManagement::gpsDataMutex = xSemaphoreCreateMutex();
@@ -78,6 +79,10 @@ void ModemManagement::loop()
             logger.logPrintF(LogSeverity::ERROR, MODULE, "Modem initialization failed");
             success = false;
         }
+
+        modem.setBaud(921600);
+        SerialAT.end();
+        SerialAT.begin(921600, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
 
         if (success)
         {
