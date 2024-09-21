@@ -3,6 +3,7 @@
 #include "IrvineConfiguration.h"
 #include <Logger.h>
 #include <ArduinoJson.h>
+#include <Updater.h>
 
 const char MODULE[] = "SERVICE";
 
@@ -14,6 +15,11 @@ void Service::begin()
     mqttSubTopicSetConfig = new MqttSubscribedTopic(mqttTopicSetConfig, [this](char *topic, uint8_t *msg, unsigned int len)
                                                     { this->mqttSetConfigMessageReceived(topic, msg, len); });
     modemManagement.subscribe(mqttSubTopicSetConfig);
+
+    sprintf(mqttTopicUpdate, "irvine/%s/service/update", irvineConfiguration.device.deviceId);
+    mqttSubTopicUpdate = new MqttSubscribedTopic(mqttTopicUpdate, [this](char *topic, uint8_t *msg, unsigned int len)
+                                                 { this->mqttUpdateMessageReceived(topic, msg, len); });
+    modemManagement.subscribe(mqttSubTopicUpdate);
 
     logger.logPrintF(LogSeverity::INFO, MODULE, "Module started");
 }
@@ -51,5 +57,29 @@ void Service::mqttSetConfigMessageReceived(char *topic, uint8_t *message, unsign
         {
             logger.logPrintF(LogSeverity::INFO, MODULE, "Parameter set: %s = %s", paramName, paramValue);
         }
+    }
+}
+
+void Service::mqttUpdateMessageReceived(char *topic, uint8_t *message, unsigned int length)
+{
+    // Convert the incoming message to a null-terminated string
+    char jsonMessage[length + 1];
+    strncpy(jsonMessage, (char *)message, length);
+    jsonMessage[length] = '\0';
+
+    logger.logPrintF(LogSeverity::INFO, MODULE, "Mqtt Update message: %s / %s", topic, jsonMessage);
+
+    // Parse the JSON message
+    StaticJsonDocument<1024> doc;
+    DeserializationError error = deserializeJson(doc, jsonMessage);
+
+    if (error)
+    {
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to parse JSON: %s", error.c_str());
+        return;
+    }
+    if (doc.containsKey("host") && doc.containsKey("path"))
+    {
+        updater.updateTrigger(doc["host"].as<const char *>(), doc["path"].as<const char *>());
     }
 }

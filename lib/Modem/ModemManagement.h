@@ -9,8 +9,11 @@
 #include <SimpleIntervalTimer.h>
 #include <ModemStatusData.h>
 #include <MqttTxItem.h>
+#include <ArduinoHttpClient.h>
 
 extern EgTinyGsm modem;
+extern TinyGsmClient updateClient;
+extern HttpClient httpClient;
 
 using MqttCallback = std::function<void(char *, uint8_t *, unsigned int)>;
 
