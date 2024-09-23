@@ -200,9 +200,9 @@ bool IrvineConfiguration::begin()
     sprintf(server.mqttPassword, "password");
 
     sprintf(modem.pin, "4967");
-    sprintf(modem.apn, "internet");
-    sprintf(modem.apnUsername, "internet");
-    sprintf(modem.apnPassword, "internet");
+    sprintf(modem.apn, "playmetric");
+    sprintf(modem.apnUsername, "");
+    sprintf(modem.apnPassword, "");
 
     gps.maxInterval = 60000u;
     gps.minimumDistance = 10u;

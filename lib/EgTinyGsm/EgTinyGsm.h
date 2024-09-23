@@ -18,13 +18,18 @@ public:
 
   bool httpInit();
   bool httpTerminate();
-  bool httpSetUrl(String &url);
+  bool httpSetUrl(String &&url);
   bool httpSetConnectTimeout(int seconds);
   bool httpSetResponseTimeout(int seconds);
-  bool httpAction(int action = HTTP_ACTION_GET);
-  uint32_t getHttpResponseLength();
+  int httpAction(int action = HTTP_ACTION_GET);
+  int getHttpResponseLength();
+  int getHttpResponse(int length, uint8_t *buf);
+  bool saveHttpResponseToFile(String &&filename);
+  int readFile(String &&filename, int length, uint8_t *buf);
 
 protected:
   bool httpOpened = false;
-  uint32_t httpResponseLength = 0u;
+  int httpResponseLength = -1;
+
+  int32_t streamGetInt32Before(char lastChar);
 };
