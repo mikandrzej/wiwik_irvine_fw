@@ -27,6 +27,7 @@ ModemManagement::ModemManagement()
 
 bool ModemManagement::begin()
 {
+    SerialAT.setRxBufferSize(6144);
     SerialAT.begin(MODEM_UART_BAUD, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
 
     pinMode(BOARD_MODEM_RESET_PIN, OUTPUT);
@@ -461,7 +462,7 @@ void ModemManagement::tryToSendMqttData()
     if (mqttConnected)
     {
         MqttTxItem item;
-        if (pdTRUE == xQueuePeek(queues.modemMqttTxQueue, &item, 0))
+        while (pdTRUE == xQueuePeek(queues.modemMqttTxQueue, &item, 0))
         {
             if (mqtt.publish(item.topic, item.msg, item.retain))
             {

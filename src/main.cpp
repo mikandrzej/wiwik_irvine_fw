@@ -26,7 +26,7 @@
 
 #include <GpsObserver.h>
 #include <Queues.h>
-
+#include <Updater.h>
 #include <nvs_flash.h>
 
 const char MODULE[] = "MAIN";
@@ -102,22 +102,6 @@ void setup()
     return;
   }
 
-  // twai_message_t msg = {
-  //     .flags = 0u,
-  //     .identifier = 0x1234u,
-  //     .data_length_code = 8,
-  //     .data = {0},
-  // };
-
-  // msg.extd = 1;
-
-  // while (1)
-  // {
-  //   msg.data[0]++;
-
-  //   twai_transmit(&msg, 100);
-  // }
-
   Serial.printf("Software version: %u\r\n", software_version);
 
   xBleTaskHandle = xTaskCreateStaticPinnedToCore(
@@ -175,5 +159,6 @@ void loop()
 {
   modemManagement.loop();
   gpsObserver.loop();
+  updater.loop();
   vTaskDelay(pdMS_TO_TICKS(1000));
 }

@@ -6,6 +6,7 @@ class Service
 {
 public:
     void begin();
+    
 
     void mqttSetConfigMessageReceived(char *topic, uint8_t *message, unsigned int length);
     void mqttUpdateMessageReceived(char *topic, uint8_t *message, unsigned int length);
