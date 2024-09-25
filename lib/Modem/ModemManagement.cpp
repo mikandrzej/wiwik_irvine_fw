@@ -297,13 +297,9 @@ void ModemManagement::loop()
                 state = ModemManagementState::MODEM_SLEEP_ON;
                 break;
             }
-            
-            TIME_COUNT_BEGIN
+
             gprsConnected = modem.isGprsConnected();
-            TIME_COUNT_END("GPRS status")
-            TIME_COUNT_BEGIN
             mqttConnected = mqtt.loop();
-            TIME_COUNT_END("MQTT loop")
 
             tryToSendMqttData();
 
@@ -380,7 +376,6 @@ void ModemManagement::checkGpsInterval()
 
 void ModemManagement::checkModemInfoInterval()
 {
-    TIME_COUNT_BEGIN
     if (modemDataInterval.check())
     {
         modemStatus.signal = modem.getSignalQuality();
@@ -461,7 +456,6 @@ void ModemManagement::checkModemInfoInterval()
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Frequency: %s", modemStatus.gsmFrequency.c_str());
         }
     }
-    TIME_COUNT_END("Check modem info");
 }
 
 void ModemManagement::tryToSendMqttData()
@@ -471,13 +465,11 @@ void ModemManagement::tryToSendMqttData()
         MqttTxItem item;
         while (pdTRUE == xQueuePeek(queues.modemMqttTxQueue, &item, 0))
         {
-            TIME_COUNT_BEGIN
             if (mqtt.publish(item.topic, item.msg, item.retain))
             {
                 logger.logPrintF(LogSeverity::DEBUG, MODULE, "Published MQTT data to topic: %s", item.topic);
                 xQueueReceive(queues.modemMqttTxQueue, &item, 0);
             }
-            TIME_COUNT_END("Send MQTT data")
         }
     }
 }
