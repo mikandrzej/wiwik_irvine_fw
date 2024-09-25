@@ -9,5 +9,11 @@ bool DeviceConfiguration::setBatteryInterval(const uint32_t value)
 bool DeviceConfiguration::setLogSeverity(const LogSeverity value)
 {
     logSeverity = value;
-    return false;
+    return true;
+}
+
+bool DeviceConfiguration::setBatteryCalibrationScale(const float value)
+{
+    batteryCalibrationScale = value;
+    return true;
 }

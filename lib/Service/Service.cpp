@@ -4,6 +4,7 @@
 #include <Logger.h>
 #include <ArduinoJson.h>
 #include <Updater.h>
+#include <Vehicle.h>
 
 const char MODULE[] = "SERVICE";
 
@@ -20,6 +21,11 @@ void Service::begin()
     mqttSubTopicUpdate = new MqttSubscribedTopic(mqttTopicUpdate, [this](char *topic, uint8_t *msg, unsigned int len)
                                                  { this->mqttUpdateMessageReceived(topic, msg, len); });
     modemManagement.subscribe(mqttSubTopicUpdate);
+
+    sprintf(mqttTopicCalibration, "irvine/%s/service/calibration", irvineConfiguration.device.deviceId);
+    mqttSubTopicCalibration = new MqttSubscribedTopic(mqttTopicCalibration, [this](char *topic, uint8_t *msg, unsigned int len)
+                                                      { this->mqttCalibrationMessageReceived(topic, msg, len); });
+    modemManagement.subscribe(mqttSubTopicCalibration);
 
     logger.logPrintF(LogSeverity::INFO, MODULE, "Module started");
 }
@@ -81,5 +87,39 @@ void Service::mqttUpdateMessageReceived(char *topic, uint8_t *message, unsigned 
     if (doc.containsKey("url"))
     {
         updater.updateTrigger(doc["url"].as<const char *>());
+    }
+}
+
+void Service::mqttCalibrationMessageReceived(char *topic, uint8_t *message, unsigned int length)
+{
+    // Convert the incoming message to a null-terminated string
+    char jsonMessage[length + 1];
+    strncpy(jsonMessage, (char *)message, length);
+    jsonMessage[length] = '\0';
+
+    logger.logPrintF(LogSeverity::INFO, MODULE, "Mqtt Calibration message: %s / %s", topic, jsonMessage);
+
+    // Parse the JSON message
+    StaticJsonDocument<1024> doc;
+    DeserializationError error = deserializeJson(doc, jsonMessage);
+
+    if (error)
+    {
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to parse JSON: %s", error.c_str());
+        return;
+    }
+    if (doc.containsKey("set_voltage"))
+    {
+        bool valid = false;
+        float ref_value = doc["set_voltage"].as<float>();
+        float meas_value = vehicle.getVccVoltage(&valid, true);
+        if (valid)
+        {
+            float calibration_scale = ref_value / meas_value;
+            if (irvineConfiguration.setParameter("dev.batCalib", calibration_scale))
+            {
+                logger.logPrintF(LogSeverity::INFO, MODULE, "Calibration done. Scale: %f", calibration_scale);
+            }
+        }
     }
 }

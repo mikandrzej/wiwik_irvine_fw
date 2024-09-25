@@ -80,6 +80,7 @@ static ConfigurationParameter parameters[] = {
     {"dev.pwrOutDet", ConfigurationParameterType::BOOL, &irvineConfiguration.device.powerOutageDetection, 0},
     {"dev.privBusRide", ConfigurationParameterType::BOOL, &irvineConfiguration.device.privateBusinessRide, 0},
     {"dev.deviceId", ConfigurationParameterType::STR, &irvineConfiguration.device.deviceId, sizeof(irvineConfiguration.device.deviceId)},
+    {"dev.batCalib", ConfigurationParameterType::FLOAT, &irvineConfiguration.device.batteryCalibrationScale, 0},
 
     {"acc.movThre", ConfigurationParameterType::UINT, &irvineConfiguration.accelerometer.movementThreshold, 0},
     {"acc.movStopDel", ConfigurationParameterType::UINT, &irvineConfiguration.accelerometer.movementStopDelay, 0},
@@ -242,8 +243,6 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
 {
     for (auto &parameter : parameters)
     {
-        logger.logPrintF(LogSeverity::INFO, MODULE, "setParameter check : %s : %s", param, parameter.name);
-
         if (0 == strcmp(param, parameter.name))
         {
             logger.logPrintF(LogSeverity::INFO, MODULE, "setParameter: %s : %s", param, value);
@@ -306,6 +305,16 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
                 }
                 return preferences.putBool(parameter.name, val) == 1;
             }
+            case ConfigurationParameterType::FLOAT:
+            {
+                float val;
+                if (1 != sscanf(value, "%f", &val))
+                {
+                    logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse FLOAT parameter");
+                    return false;
+                }
+                return preferences.putFloat(parameter.name, val) == 1;
+            }
             default:
                 logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid parameter type (%d) %s", parameter.type, param);
                 return false;
@@ -315,6 +324,40 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
 
     logger.logPrintF(LogSeverity::WARNING, MODULE, "parameter not found: %s : %s", param, value);
 
+    return false;
+}
+
+bool IrvineConfiguration::setParameter(const char *param, const float value)
+{
+    for (auto &parameter : parameters)
+    {
+        if (0 == strcmp(param, parameter.name))
+        {
+            logger.logPrintF(LogSeverity::INFO, MODULE, "setParameter: %s : %f", param, value);
+
+            if (parameter.type == ConfigurationParameterType::FLOAT)
+            {
+                if (preferences.putFloat(parameter.name, value) == 4)
+                {
+                    *((float *)parameter.pointer) = value;
+                    logger.logPrintF(LogSeverity::DEBUG, MODULE, "Parameter %s set %f completed", parameter.name, param);
+                    return true;
+                }
+                else
+                {
+                    logger.logPrintF(LogSeverity::DEBUG, MODULE, "Parameter %s set %f FAILED", parameter.name, param);
+                    return false;
+                }
+            }
+            else
+            {
+                logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid parameter type (%d) %s", parameter.type, param);
+                return false;
+            }
+        }
+    }
+
+    logger.logPrintF(LogSeverity::WARNING, MODULE, "parameter not found: %s : %s", param, value);
     return false;
 }
 
@@ -357,6 +400,10 @@ void IrvineConfiguration::printParameter(ConfigurationParameter &parameter)
     case ConfigurationParameterType::BOOL:
         Serial.print(*((bool *)parameter.pointer) ? "true" : "false");
         break;
+
+    case ConfigurationParameterType::FLOAT:
+        Serial.print(*((float *)parameter.pointer));
+        break;
     }
 
     Serial.print("\r\n");
@@ -388,6 +435,10 @@ void IrvineConfiguration::loadParameter(ConfigurationParameter &parameter)
 
     case ConfigurationParameterType::BOOL:
         *((bool *)parameter.pointer) = preferences.getBool(parameter.name);
+        break;
+
+    case ConfigurationParameterType::FLOAT:
+        *((float *)parameter.pointer) = preferences.getFloat(parameter.name);
         break;
     }
 }

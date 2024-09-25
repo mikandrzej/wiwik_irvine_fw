@@ -131,14 +131,7 @@ PathFileData *DataLogger::getFileData(String &path)
     {
         return nullptr;
     }
-    // for (auto *filePathData : pathFiles)
-    // {
-    //     if (filePathData->path.compareTo(path) == 0)
-    //     {
-    //         return filePathData;
-    //     }
-    // }
-    Serial.printf("Heap before file open: %u\n", ESP.getFreeHeap());
+
     fs::File file = SD.open(path.c_str(), FILE_APPEND);
     if (!file)
     {

@@ -16,7 +16,9 @@ public:
     bool privateBusinessRide = false;  // reporting off
     char deviceId[50u] = {0u};
     LogSeverity logSeverity = LogSeverity::INFO;
+    float batteryCalibrationScale = 1.0f;
 
     bool setBatteryInterval(const uint32_t value);
     bool setLogSeverity(const LogSeverity value);
+    bool setBatteryCalibrationScale(const float value);
 };

@@ -22,7 +22,8 @@ enum class ConfigurationParameterType
     UCHAR,
     USHORT,
     UINT,
-    BOOL
+    BOOL,
+    FLOAT
 };
 
 struct ConfigurationParameter
@@ -40,6 +41,8 @@ public:
     void printConfiguration();
 
     bool setParameter(const char *param, const char *value);
+
+    bool setParameter(const char *param, const float value);
 
     ServerConfiguration server;
     ModemConfiguration modem;

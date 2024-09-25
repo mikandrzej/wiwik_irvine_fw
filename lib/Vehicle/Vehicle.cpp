@@ -36,7 +36,7 @@ void Vehicle::loop()
     obtainVccVoltage();
 }
 
-float Vehicle::getVccVoltage(bool *valid)
+float Vehicle::getVccVoltage(bool *valid, const bool raw)
 {
     if (valid != nullptr)
     {
@@ -45,7 +45,12 @@ float Vehicle::getVccVoltage(bool *valid)
         else
             *valid = false;
     }
-    return voltage;
+    if (raw)
+        return voltage;
+    else
+    {
+        return voltage * irvineConfiguration.device.batteryCalibrationScale;
+    }
 }
 
 bool Vehicle::isIgnitionOn(bool *valid)
