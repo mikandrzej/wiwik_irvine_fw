@@ -110,16 +110,19 @@ void DataLogger::logData(DataLoggerQueueItem &data)
     }
     else
     {
-        int error = fileData->file.getWriteError();
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Data log error %d, logged: %d, expexted: %d", error, savedLen, logDataLen);
+        // int error = fileData->file.getWriteError();
+        // logger.logPrintF(LogSeverity::DEBUG, MODULE, "Data log error %d, logged: %d, expexted: %d", error, savedLen, logDataLen);
 
-        reopenFile(fileData);
-        savedLen = fileData->file.write((uint8_t *)data.logData, logDataLen);
-        if (savedLen == logDataLen)
-        {
-            logger.logPrintF(LogSeverity::DEBUG, MODULE, "Save retry succeed");
-        }
+        // reopenFile(fileData);
+        // savedLen = fileData->file.write((uint8_t *)data.logData, logDataLen);
+        // if (savedLen == logDataLen)
+        // {
+        //     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Save retry succeed");
+        // }
     }
+
+    fileData->file.close();
+    delete fileData;
 }
 
 PathFileData *DataLogger::getFileData(String &path)
@@ -128,18 +131,18 @@ PathFileData *DataLogger::getFileData(String &path)
     {
         return nullptr;
     }
-    for (auto *filePathData : pathFiles)
-    {
-        if (filePathData->path.compareTo(path) == 0)
-        {
-            return filePathData;
-        }
-    }
-
+    // for (auto *filePathData : pathFiles)
+    // {
+    //     if (filePathData->path.compareTo(path) == 0)
+    //     {
+    //         return filePathData;
+    //     }
+    // }
+    Serial.printf("Heap before file open: %u\n", ESP.getFreeHeap());
     fs::File file = SD.open(path.c_str(), FILE_APPEND);
     if (!file)
     {
-        logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to create directory %s", path.c_str());
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to open file %s", path.c_str());
         return nullptr;
     }
 
@@ -147,7 +150,7 @@ PathFileData *DataLogger::getFileData(String &path)
         .path = path,
         .file = file};
 
-    pathFiles.push_back(fpData);
+    // pathFiles.push_back(fpData);
 
     logger.logPrintF(LogSeverity::INFO, MODULE, "Opened new file %s", path.c_str());
 

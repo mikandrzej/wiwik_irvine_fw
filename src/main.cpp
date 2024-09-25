@@ -62,14 +62,15 @@ TaskHandle_t xVehicleTaskHandle = NULL;
 
 void setup()
 {
+  Serial.begin(CONSOLE_UART_BAUD);
   if (!queues.begin())
   {
-    logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to init queues");
+    Serial.println("Failed to init queues");
+    while (1)
+      ;
   }
 
   WiFi.mode(WIFI_OFF);
-
-  Serial.begin(CONSOLE_UART_BAUD);
 
   logger.begin(&Serial);
   irvineConfiguration.begin();
@@ -160,5 +161,5 @@ void loop()
   modemManagement.loop();
   gpsObserver.loop();
   updater.loop();
-  vTaskDelay(pdMS_TO_TICKS(1000));
+  vTaskDelay(pdMS_TO_TICKS(100));
 }

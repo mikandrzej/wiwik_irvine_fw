@@ -62,18 +62,18 @@ void taskBluetooth(void *pvParameters)
         logger.logPrintF(LogSeverity::ERROR, MODULE, "esp_bt_controller_enable error 0x%x", esp_err);
         vTaskDelete(NULL);
     }
-    // esp_err = esp_bluedroid_init();
-    // if (esp_err != ESP_OK)
-    // {
-    //     logger.logPrintF(LogSeverity::ERROR, MODULE, "esp_bluedroid_init error 0x%x", esp_err);
-    //     vTaskDelete(NULL);
-    // }
-    // esp_err = esp_bluedroid_enable();
-    // if (esp_err != ESP_OK)
-    // {
-    //     logger.logPrintF(LogSeverity::ERROR, MODULE, "esp_bluedroid_enable error 0x%x", esp_err);
-    //     vTaskDelete(NULL);
-    // }
+    esp_err = esp_bluedroid_init();
+    if (esp_err != ESP_OK)
+    {
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "esp_bluedroid_init error 0x%x", esp_err);
+        vTaskDelete(NULL);
+    }
+    esp_err = esp_bluedroid_enable();
+    if (esp_err != ESP_OK)
+    {
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "esp_bluedroid_enable error 0x%x", esp_err);
+        vTaskDelete(NULL);
+    }
     esp_err = esp_ble_gatts_register_callback(esp_gatts_callback);
     if (esp_err != ESP_OK)
     {

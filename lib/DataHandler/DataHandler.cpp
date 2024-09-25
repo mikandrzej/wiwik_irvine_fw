@@ -30,5 +30,5 @@ void DataHandler::handleData(DataLoggable &data)
 
     // todo shared ptr?
 
-    xQueueSend(dataLoggerQueue, &logItem, 0);
+    xQueueSendFromISR(dataLoggerQueue, &logItem, 0);
 }

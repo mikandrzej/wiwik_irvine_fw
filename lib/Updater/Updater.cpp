@@ -3,6 +3,7 @@
 #include <EgTinyGsm.h>
 #include <Update.h>
 #include <IrvineConfiguration.h>
+#include <TimeCounter.h>
 
 char MODULE[] = "UPDATER";
 
@@ -138,6 +139,7 @@ void Updater::loop()
 
     case UpdateState::GET_CHUNK:
     {
+        TIME_COUNT_BEGIN
         char chunkUrl[100];
 
         if (!buildChunkUrl(this->url, chunkFiles[currentChunk], chunkUrl))
@@ -178,6 +180,7 @@ void Updater::loop()
         currentChunkPosition = 0;
 
         updateState = UpdateState::WRITE_CHUNK;
+        TIME_COUNT_END("Chunk GET")
     }
     break;
 
@@ -203,6 +206,7 @@ void Updater::loop()
             break;
         }
 
+        TIME_COUNT_BEGIN
         size_t bytesWritten = Update.write(buf, bytesRead);
         if (bytesRead != bytesWritten)
         {
@@ -214,6 +218,7 @@ void Updater::loop()
 
         currentChunkPosition += bytesWritten;
         currentUpdatePosition += bytesWritten;
+        TIME_COUNT_END("Chunk write")
 
         float progress = ((float)currentUpdatePosition * 100.0f) / (float)totalLength;
         updateProgress(progress);

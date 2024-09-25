@@ -205,7 +205,10 @@ bool IrvineConfiguration::begin()
     sprintf(modem.apnPassword, "");
 
     gps.maxInterval = 60000u;
-    gps.minimumDistance = 10u;
+    gps.minimumDistance = 20u;
+    gps.stopLogInterval = 60000u;
+    gps.movementLogInterval = 10000u;
+    gps.minimumDistance = 100u;
 
     obd.speedActive = true;
     obd.speedInterval = 1000u;
