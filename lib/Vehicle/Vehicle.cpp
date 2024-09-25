@@ -27,6 +27,8 @@ void Vehicle::init()
     {
         logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to config ADC1 width");
     }
+    // Initialize the voltage buffer with the default depth
+    voltageBuffer.resize(filterDepth, 0.0f);
 }
 
 void Vehicle::loop()
@@ -133,8 +135,20 @@ void Vehicle::obtainVccVoltage()
         rawVoltage = esp_adc_cal_raw_to_voltage(rawVoltage, &adc1_chars);
     }
 
-    voltage = (float)(rawVoltage * 11u) / 1000.0f;
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "VCC voltage read: %.3f", voltage);
+    float newVoltage = (float)(rawVoltage * 11u) / 1000.0f;
+    logger.logPrintF(LogSeverity::DEBUG, MODULE, "VCC voltage read: %.3f", newVoltage);
+
+    // Update the voltage buffer with the new reading
+    voltageBuffer[currentBufferIndex] = newVoltage;
+    currentBufferIndex = (currentBufferIndex + 1) % filterDepth;
+
+    if (currentBufferIndex == 0)
+    {
+        bufferFilled = true; // Buffer is fully filled after one complete cycle
+    }
+
+    // Calculate the average voltage
+    voltage = calculateAverageVoltage();
 }
 
 void Vehicle::adcCalibration()
@@ -159,4 +173,17 @@ void Vehicle::adcCalibration()
     {
         logger.logPrintF(LogSeverity::ERROR, MODULE, "Invalid arg");
     }
+}
+
+float Vehicle::calculateAverageVoltage()
+{
+    float sum = 0.0f;
+    size_t count = bufferFilled ? filterDepth : currentBufferIndex;
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        sum += voltageBuffer[i];
+    }
+
+    return count > 0 ? sum / (float)count : -1.0f;
 }
