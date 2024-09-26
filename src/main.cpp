@@ -27,6 +27,9 @@
 #include <GpsObserver.h>
 #include <Queues.h>
 #include <Updater.h>
+
+#include <PcComm.h>
+
 #include <nvs_flash.h>
 
 const char MODULE[] = "MAIN";
@@ -161,5 +164,6 @@ void loop()
   modemManagement.loop();
   gpsObserver.loop();
   updater.loop();
+  pcComm.loop();
   vTaskDelay(pdMS_TO_TICKS(100));
 }

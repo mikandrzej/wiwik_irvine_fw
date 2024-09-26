@@ -136,74 +136,74 @@ bool IrvineConfiguration::begin()
         loadParameter(parameter);
     }
 
-    bluetooth.devices[0].macAddress[0] = 0xE7;
-    bluetooth.devices[0].macAddress[1] = 0xD1;
-    bluetooth.devices[0].macAddress[2] = 0x84;
-    bluetooth.devices[0].macAddress[3] = 0x91;
-    bluetooth.devices[0].macAddress[4] = 0x15;
-    bluetooth.devices[0].macAddress[5] = 0x78;
-    bluetooth.devices[0].type = BluetoothDeviceType::JAALEE_SENSOR;
-    bluetooth.devices[0].minInterval = 10000u;
+    // bluetooth.devices[0].macAddress[0] = 0xE7;
+    // bluetooth.devices[0].macAddress[1] = 0xD1;
+    // bluetooth.devices[0].macAddress[2] = 0x84;
+    // bluetooth.devices[0].macAddress[3] = 0x91;
+    // bluetooth.devices[0].macAddress[4] = 0x15;
+    // bluetooth.devices[0].macAddress[5] = 0x78;
+    // bluetooth.devices[0].type = BluetoothDeviceType::JAALEE_SENSOR;
+    // bluetooth.devices[0].minInterval = 10000u;
 
-    bluetooth.devices[1].macAddress[0] = 0xE5;
-    bluetooth.devices[1].macAddress[1] = 0x8B;
-    bluetooth.devices[1].macAddress[2] = 0x12;
-    bluetooth.devices[1].macAddress[3] = 0xEC;
-    bluetooth.devices[1].macAddress[4] = 0xC3;
-    bluetooth.devices[1].macAddress[5] = 0xA8;
-    bluetooth.devices[1].type = BluetoothDeviceType::JAALEE_SENSOR;
-    bluetooth.devices[1].minInterval = 10000u;
+    // bluetooth.devices[1].macAddress[0] = 0xE5;
+    // bluetooth.devices[1].macAddress[1] = 0x8B;
+    // bluetooth.devices[1].macAddress[2] = 0x12;
+    // bluetooth.devices[1].macAddress[3] = 0xEC;
+    // bluetooth.devices[1].macAddress[4] = 0xC3;
+    // bluetooth.devices[1].macAddress[5] = 0xA8;
+    // bluetooth.devices[1].type = BluetoothDeviceType::JAALEE_SENSOR;
+    // bluetooth.devices[1].minInterval = 10000u;
 
-    bluetooth.devices[2].macAddress[0] = 0xE8;
-    bluetooth.devices[2].macAddress[1] = 0xD0;
-    bluetooth.devices[2].macAddress[2] = 0x4B;
-    bluetooth.devices[2].macAddress[3] = 0x01;
-    bluetooth.devices[2].macAddress[4] = 0xA6;
-    bluetooth.devices[2].macAddress[5] = 0xDC;
-    bluetooth.devices[2].type = BluetoothDeviceType::M52PAS_SENSOR;
-    bluetooth.devices[2].minInterval = 10000u;
+    // bluetooth.devices[2].macAddress[0] = 0xE8;
+    // bluetooth.devices[2].macAddress[1] = 0xD0;
+    // bluetooth.devices[2].macAddress[2] = 0x4B;
+    // bluetooth.devices[2].macAddress[3] = 0x01;
+    // bluetooth.devices[2].macAddress[4] = 0xA6;
+    // bluetooth.devices[2].macAddress[5] = 0xDC;
+    // bluetooth.devices[2].type = BluetoothDeviceType::M52PAS_SENSOR;
+    // bluetooth.devices[2].minInterval = 10000u;
 
-    bluetooth.devices[3].macAddress[0] = 0xF2;
-    bluetooth.devices[3].macAddress[1] = 0x83;
-    bluetooth.devices[3].macAddress[2] = 0x23;
-    bluetooth.devices[3].macAddress[3] = 0xF8;
-    bluetooth.devices[3].macAddress[4] = 0x6A;
-    bluetooth.devices[3].macAddress[5] = 0x9D;
-    bluetooth.devices[3].type = BluetoothDeviceType::M52PAS_SENSOR;
-    bluetooth.devices[3].minInterval = 10000u;
+    // bluetooth.devices[3].macAddress[0] = 0xF2;
+    // bluetooth.devices[3].macAddress[1] = 0x83;
+    // bluetooth.devices[3].macAddress[2] = 0x23;
+    // bluetooth.devices[3].macAddress[3] = 0xF8;
+    // bluetooth.devices[3].macAddress[4] = 0x6A;
+    // bluetooth.devices[3].macAddress[5] = 0x9D;
+    // bluetooth.devices[3].type = BluetoothDeviceType::M52PAS_SENSOR;
+    // bluetooth.devices[3].minInterval = 10000u;
 
-    bluetooth.devices[4].macAddress[0] = 0xF7;
-    bluetooth.devices[4].macAddress[1] = 0xAE;
-    bluetooth.devices[4].macAddress[2] = 0x34;
-    bluetooth.devices[4].macAddress[3] = 0xE2;
-    bluetooth.devices[4].macAddress[4] = 0xA5;
-    bluetooth.devices[4].macAddress[5] = 0xE7;
-    bluetooth.devices[4].type = BluetoothDeviceType::M52PAS_SENSOR;
-    bluetooth.devices[4].minInterval = 10000u;
+    // bluetooth.devices[4].macAddress[0] = 0xF7;
+    // bluetooth.devices[4].macAddress[1] = 0xAE;
+    // bluetooth.devices[4].macAddress[2] = 0x34;
+    // bluetooth.devices[4].macAddress[3] = 0xE2;
+    // bluetooth.devices[4].macAddress[4] = 0xA5;
+    // bluetooth.devices[4].macAddress[5] = 0xE7;
+    // bluetooth.devices[4].type = BluetoothDeviceType::M52PAS_SENSOR;
+    // bluetooth.devices[4].minInterval = 10000u;
 
-    bluetooth.devices[5].macAddress[0] = 0xE8;
-    bluetooth.devices[5].macAddress[1] = 0xE6;
-    bluetooth.devices[5].macAddress[2] = 0x37;
-    bluetooth.devices[5].macAddress[3] = 0x56;
-    bluetooth.devices[5].macAddress[4] = 0xD5;
-    bluetooth.devices[5].macAddress[5] = 0xD2;
-    bluetooth.devices[5].type = BluetoothDeviceType::JAALEE_SENSOR;
-    bluetooth.devices[5].minInterval = 10000u;
+    // bluetooth.devices[5].macAddress[0] = 0xE8;
+    // bluetooth.devices[5].macAddress[1] = 0xE6;
+    // bluetooth.devices[5].macAddress[2] = 0x37;
+    // bluetooth.devices[5].macAddress[3] = 0x56;
+    // bluetooth.devices[5].macAddress[4] = 0xD5;
+    // bluetooth.devices[5].macAddress[5] = 0xD2;
+    // bluetooth.devices[5].type = BluetoothDeviceType::JAALEE_SENSOR;
+    // bluetooth.devices[5].minInterval = 10000u;
 
     uint8_t mac[6];
     WiFi.macAddress(mac);
     sprintf(device.deviceId, "irvine_%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     device.batteryInterval = 60000u;
 
-    sprintf(server.mqttHost, "mqtt.7frost.com");
-    server.mqttPort = 1883u;
-    sprintf(server.mqttUsername, "root");
-    sprintf(server.mqttPassword, "password");
+    // sprintf(server.mqttHost, "mqtt.7frost.com");
+    // server.mqttPort = 1883u;
+    // sprintf(server.mqttUsername, "root");
+    // sprintf(server.mqttPassword, "password");
 
-    sprintf(modem.pin, "4967");
-    sprintf(modem.apn, "playmetric");
-    sprintf(modem.apnUsername, "");
-    sprintf(modem.apnPassword, "");
+    // sprintf(modem.pin, "4967");
+    // sprintf(modem.apn, "playmetric");
+    // sprintf(modem.apnUsername, "");
+    // sprintf(modem.apnPassword, "");
 
     gps.maxInterval = 60000u;
     gps.minimumDistance = 20u;
@@ -256,11 +256,27 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
                 {
                     sscanf(&value[i * 2], "%02hhx", &bytes[i]);
                 }
-                return preferences.putBytes(parameter.name, bytes, parameter.len) == parameter.len;
+                if (preferences.putBytes(parameter.name, bytes, parameter.len) == parameter.len)
+                {
+                    memcpy(parameter.pointer, bytes, parameter.len);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             case ConfigurationParameterType::STR:
-                return preferences.putBytes(parameter.name, value, parameter.len) == parameter.len;
+                if (preferences.putBytes(parameter.name, value, parameter.len) == parameter.len)
+                {
+                    memcpy(parameter.pointer, value, parameter.len);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
 
             case ConfigurationParameterType::UCHAR:
             {
@@ -270,7 +286,15 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
                     logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse UCHAR parameter");
                     return false;
                 }
-                return preferences.putUChar(parameter.name, val) == 1;
+                if (preferences.putUChar(parameter.name, val) == 1)
+                {
+                    *((uint8_t *)parameter.pointer) = val;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             case ConfigurationParameterType::USHORT:
@@ -281,7 +305,15 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
                     logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse USHORT parameter");
                     return false;
                 }
-                return preferences.putUShort(parameter.name, val) == 2;
+                if (preferences.putUShort(parameter.name, val) == 2)
+                {
+                    *((uint16_t *)parameter.pointer) = val;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             case ConfigurationParameterType::UINT:
@@ -292,7 +324,15 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
                     logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse UINT parameter");
                     return false;
                 }
-                return preferences.putUInt(parameter.name, val) == 4;
+                if (preferences.putUInt(parameter.name, val) == 4)
+                {
+                    *((uint32_t *)parameter.pointer) = val;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             case ConfigurationParameterType::BOOL:
@@ -303,7 +343,15 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
                     logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse BOOL parameter");
                     return false;
                 }
-                return preferences.putBool(parameter.name, val) == 1;
+                if (preferences.putBool(parameter.name, val) == 1)
+                {
+                    *((bool *)parameter.pointer) = val;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
             case ConfigurationParameterType::FLOAT:
             {
@@ -313,7 +361,15 @@ bool IrvineConfiguration::setParameter(const char *param, const char *value)
                     logger.logPrintF(LogSeverity::WARNING, MODULE, "Failed to parse FLOAT parameter");
                     return false;
                 }
-                return preferences.putFloat(parameter.name, val) == 1;
+                if (preferences.putFloat(parameter.name, val) == 4)
+                {
+                    *((float *)parameter.pointer) = val;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
             default:
                 logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid parameter type (%d) %s", parameter.type, param);
