@@ -12,7 +12,16 @@ public:
 
 private:
     HardwareSerial &serial;
-    std::vector<PcCommand *> commands;
+    std::vector<PcCommand> commands = {
+        PcCommand("APN", [this](char *data)
+                  { handleApnCommand(data); }),
+        PcCommand("SIM_PIN", [this](char *data)
+                  { handleSimPinCommand(data); }),
+        PcCommand("MQTT_SERVER", [this](char *data)
+                  { handleMqttServerCommand(data); }),
+        PcCommand("BLE_DEV", [this](char *data)
+                  { handleBleDeviceCommand(data); }),
+    };
     char rxBuffer[1024];
     uint16_t rxBufferPos = 0u;
 
