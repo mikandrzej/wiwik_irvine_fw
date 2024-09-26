@@ -29,14 +29,12 @@ ModemManagement::ModemManagement()
 bool ModemManagement::begin()
 {
     SerialAT.setRxBufferSize(6144);
-    SerialAT.begin(MODEM_UART_BAUD, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
 
     pinMode(BOARD_MODEM_RESET_PIN, OUTPUT);
     pinMode(BOARD_MODEM_PWR_PIN, OUTPUT);
     digitalWrite(BOARD_MODEM_RESET_PIN, HIGH);
     digitalWrite(BOARD_MODEM_PWR_PIN, LOW);
 
-    mqtt.setServer(irvineConfiguration.server.mqttHost, irvineConfiguration.server.mqttPort);
     mqtt.setCallback([this](char *topic, uint8_t *msg, unsigned int len)
                      { this->mqttMessageCallback(topic, msg, len); });
     return true;
@@ -59,11 +57,11 @@ void ModemManagement::loop()
         success = true;
 
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem reset");
-        digitalWrite(BOARD_MODEM_PWR_PIN, HIGH);
-        digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        // digitalWrite(BOARD_MODEM_PWR_PIN, HIGH);
+        // digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
+        // vTaskDelay(pdMS_TO_TICKS(100));
         digitalWrite(BOARD_MODEM_RESET_PIN, HIGH);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(2000));
         digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
 
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem power up");
@@ -75,6 +73,9 @@ void ModemManagement::loop()
         vTaskDelay(pdMS_TO_TICKS(5000));
         // todo wait for AT
 
+        SerialAT.end();
+        SerialAT.begin(115200, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
+
         // todo obtain modem data
         if (!modem.init())
         {
@@ -82,12 +83,12 @@ void ModemManagement::loop()
             success = false;
         }
 
-        modem.setBaud(921600);
-        SerialAT.end();
-        SerialAT.begin(921600, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
-
         if (success)
         {
+            modem.setBaud(921600);
+            SerialAT.end();
+            SerialAT.begin(921600, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
+
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem initialized");
 
             modemStatus.modemName = modem.getModemName();
@@ -197,7 +198,11 @@ void ModemManagement::loop()
         break;
 
     case ModemManagementState::MQTT_CONNECTING:
-        if (irvineConfiguration.server.mqttHost[0u] != '\0')
+        if (irvineConfiguration.server.mqttHost[0u] == '\0')
+        {
+            success = false;
+        }
+        if (irvineConfiguration.server.mqttUsername[0u] != '\0')
         {
             logger.logPrintF(LogSeverity::INFO, MODULE, "Connecting to MQTT %s:%d with %s/%s as %s",
                              irvineConfiguration.server.mqttHost,
@@ -205,6 +210,7 @@ void ModemManagement::loop()
                              irvineConfiguration.server.mqttUsername,
                              irvineConfiguration.server.mqttPassword,
                              irvineConfiguration.device.deviceId);
+            mqtt.setServer(irvineConfiguration.server.mqttHost, irvineConfiguration.server.mqttPort);
             success = mqtt.connect(irvineConfiguration.device.deviceId,
                                    irvineConfiguration.server.mqttUsername,
                                    irvineConfiguration.server.mqttPassword);
@@ -217,6 +223,7 @@ void ModemManagement::loop()
                              irvineConfiguration.server.mqttHost,
                              irvineConfiguration.server.mqttPort,
                              irvineConfiguration.device.deviceId);
+            mqtt.setServer(irvineConfiguration.server.mqttHost, irvineConfiguration.server.mqttPort);
             success = mqtt.connect(irvineConfiguration.device.deviceId);
         }
 
@@ -347,8 +354,7 @@ void ModemManagement::loop()
         {
             if (modemPowerOnRequest)
             {
-
-                state = ModemManagementState::MODEM_SLEEP_OFF;
+                state = ModemManagementState::MODEM_POWERING_ON;
             }
         }
     }
