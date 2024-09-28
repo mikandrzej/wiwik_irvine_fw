@@ -141,7 +141,7 @@ void Vehicle::obtainVccVoltage()
     }
 
     float newVoltage = (float)(rawVoltage * 11u) / 1000.0f;
-    logger.logPrintF(LogSeverity::DEBUG, MODULE, "VCC voltage read: %.3f", newVoltage);
+    logger.logPrintF(LogSeverity::DEBUG, MODULE, "raw VCC voltage read: %.3f", newVoltage);
 
     // Update the voltage buffer with the new reading
     voltageBuffer[currentBufferIndex] = newVoltage;

@@ -81,7 +81,7 @@ private:
     bool mqttConnected = false;
 
     SimpleIntervalTimer gpsDataInterval = {1000u};
-    SimpleIntervalTimer modemDataInterval = {1000u};
+    SimpleIntervalTimer modemDataInterval = {60000u};
 
     static SemaphoreHandle_t gpsDataMutex;
     GpsData lastGpsData = {};

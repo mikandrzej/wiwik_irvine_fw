@@ -91,18 +91,18 @@ void DataLogger::logData(DataLoggerQueueItem &data)
     }
 
     String path = logPathPrefix + "/" + String(data.logItem) + ".csv";
-    auto *fileData = getFileData(path);
 
-    if (fileData == nullptr)
+    fs::File file = SD.open(path.c_str(), FILE_APPEND);
+    if (!file)
     {
-        logger.logPrintF(LogSeverity::ERROR, MODULE, "log data error - File error");
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to open file %s", path.c_str());
         return;
     }
+
     uint32_t logDataLen = strlen(data.logData);
+    size_t savedLen = file.write((uint8_t *)data.logData, logDataLen);
 
-    size_t savedLen = fileData->file.write((uint8_t *)data.logData, logDataLen);
-
-    fileData->file.flush();
+    file.flush();
 
     if (savedLen == logDataLen)
     {
@@ -110,44 +110,11 @@ void DataLogger::logData(DataLoggerQueueItem &data)
     }
     else
     {
-        // int error = fileData->file.getWriteError();
-        // logger.logPrintF(LogSeverity::DEBUG, MODULE, "Data log error %d, logged: %d, expexted: %d", error, savedLen, logDataLen);
-
-        // reopenFile(fileData);
-        // savedLen = fileData->file.write((uint8_t *)data.logData, logDataLen);
-        // if (savedLen == logDataLen)
-        // {
-        //     logger.logPrintF(LogSeverity::DEBUG, MODULE, "Save retry succeed");
-        // }
+        int error = file.getWriteError();
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "Data log error %d, logged: %d, expexted: %d", error, savedLen, logDataLen);
     }
 
-    fileData->file.close();
-    delete fileData;
-}
-
-PathFileData *DataLogger::getFileData(String &path)
-{
-    if (!initialized)
-    {
-        return nullptr;
-    }
-
-    fs::File file = SD.open(path.c_str(), FILE_APPEND);
-    if (!file)
-    {
-        logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to open file %s", path.c_str());
-        return nullptr;
-    }
-
-    auto *fpData = new PathFileData{
-        .path = path,
-        .file = file};
-
-    // pathFiles.push_back(fpData);
-
-    logger.logPrintF(LogSeverity::INFO, MODULE, "Opened new file %s", path.c_str());
-
-    return fpData;
+    file.close();
 }
 
 void DataLogger::reopenFile(PathFileData *fileData)

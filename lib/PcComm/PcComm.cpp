@@ -8,14 +8,6 @@ PcComm pcComm(Serial);
 
 PcComm::PcComm(HardwareSerial &hwSerial) : serial(hwSerial)
 {
-    // commands.push_back(new PcCommand("APN", [this](char *data)
-    //                                  { handleApnCommand(data); }));
-    // commands.push_back(new PcCommand("SIM_PIN", [this](char *data)
-    //                                  { handleSimPinCommand(data); }));
-    // commands.push_back(new PcCommand("MQTT_SERVER", [this](char *data)
-    //                                  { handleMqttServerCommand(data); }));
-    // commands.push_back(new PcCommand("BLE_DEV", [this](char *data)
-    //                                  { handleBleDeviceCommand(data); }));
 }
 
 void PcComm::loop()

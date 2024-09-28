@@ -29,9 +29,6 @@ public:
     void begin();
     void logData(DataLoggerQueueItem &data);
 
-    PathFileData *getFileData(String &path);
-
-
 private:
     void reopenFile(PathFileData *fileData);
     String logPathPrefix = "/log";
