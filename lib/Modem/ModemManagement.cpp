@@ -91,41 +91,52 @@ void ModemManagement::loop()
 
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem initialized");
 
+            modem.setNetworkMode(38);
+
             modemStatus.modemName = modem.getModemName();
             logger.logPrintF(LogSeverity::INFO, MODULE, "Modem name: %s", modemStatus.modemName.c_str());
-            modemStatus.modemInfo = modem.getModemInfo();
-            logger.logPrintF(LogSeverity::INFO, MODULE, "Modem info: %s", modemStatus.modemInfo.c_str());
+            modemStatus.modemModel = modem.getModemModel();
+            logger.logPrintF(LogSeverity::INFO, MODULE, "Modem model: %s", modemStatus.modemModel.c_str());
             modemStatus.modemImei = modem.getIMEI();
             logger.logPrintF(LogSeverity::INFO, MODULE, "Modem IMEI: %s", modemStatus.modemImei.c_str());
 
-            SimStatus sim_status = modem.getSimStatus(10000);
-            if (sim_status == SIM_LOCKED)
+            state = ModemManagementState::MODEM_SIM_UNLOCK;
+        }
+
+        break;
+
+    case ModemManagementState::MODEM_SIM_UNLOCK:
+    {
+        success = true;
+        SimStatus sim_status = modem.getSimStatus(10000);
+        if (sim_status == SIM_LOCKED)
+        {
+            modemStatus.pinEnabled = true;
+            if (modem.simUnlock(irvineConfiguration.modem.pin))
             {
-                modemStatus.pinEnabled = true;
-                if (modem.simUnlock(irvineConfiguration.modem.pin))
+                sim_status = modem.getSimStatus(10000);
+                if (sim_status == SIM_READY)
                 {
-                    sim_status = modem.getSimStatus(10000);
-                    if (sim_status == SIM_READY)
-                    {
-                        logger.logPrintF(LogSeverity::INFO, MODULE, "SIM unlocked");
-                    }
+                    modemStatus.simReady = true;
+                    logger.logPrintF(LogSeverity::INFO, MODULE, "SIM unlocked");
                 }
-                else
-                {
-                    logger.logPrintF(LogSeverity::ERROR, MODULE, "SIM unlock error");
-                    success = false;
-                }
-            }
-            else if (sim_status == SIM_READY)
-            {
-                modemStatus.pinEnabled = false;
-                logger.logPrintF(LogSeverity::INFO, MODULE, "SIM lock disabled");
             }
             else
             {
-                logger.logPrintF(LogSeverity::ERROR, MODULE, "SIM error");
+                logger.logPrintF(LogSeverity::ERROR, MODULE, "SIM unlock error");
                 success = false;
             }
+        }
+        else if (sim_status == SIM_READY)
+        {
+            modemStatus.pinEnabled = false;
+            modemStatus.simReady = true;
+            logger.logPrintF(LogSeverity::INFO, MODULE, "SIM lock disabled");
+        }
+        else
+        {
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "SIM error");
+            success = false;
         }
 
         if (success)
@@ -136,20 +147,20 @@ void ModemManagement::loop()
             modemStatus.simImsi = modem.getIMSI();
             logger.logPrintF(LogSeverity::INFO, MODULE, "SIM CCID: %s, SIM IMSI: %s", modemStatus.simCcid.c_str(), modemStatus.simImsi.c_str());
 
-            modemPoweredOn = true;
+            modemStatus.modemPoweredOn = true;
         }
         state = ModemManagementState::IDLE;
         break;
+    }
 
     case ModemManagementState::MODEM_SLEEP_ON:
         // modem.poweroff();
         // modem.radioOff();
         modem.sleepEnable(1);
-        gpsEnabled = false;
-        modemPoweredOn = false;
-        modemConnected = false;
-        gprsConnected = false;
-        mqttConnected = false;
+        modemStatus.gpsEnabled = false;
+        modemStatus.modemPoweredOn = false;
+        modemStatus.gprsConnected = false;
+        modemStatus.mqttConnected = false;
 
         // esp_deep_sleep_start();
         // esp_sleep_enable_timer_wakeup(500);
@@ -162,9 +173,8 @@ void ModemManagement::loop()
         // modem.poweroff();
         // modem.radioOff();
         modem.sleepEnable(0);
-        modemPoweredOn = true;
-        gpsEnabled = true;
-        // modemConnected = false;
+        modemStatus.modemPoweredOn = true;
+        modemStatus.gpsEnabled = true;
         // gprsConnected = false;
         // mqttConnected = false;
 
@@ -269,7 +279,7 @@ void ModemManagement::loop()
                     if (modem.waitResponse(1000) == 1)
                     {
                         logger.logPrintF(LogSeverity::INFO, MODULE, "GPS initialization done");
-                        gpsEnabled = true;
+                        modemStatus.gpsEnabled = true;
                     }
                     else
                     {
@@ -296,7 +306,7 @@ void ModemManagement::loop()
 
     case ModemManagementState::IDLE:
 
-        if (modemPoweredOn)
+        if (modemStatus.modemPoweredOn)
         {
             if (!modemPowerOnRequest)
             {
@@ -305,8 +315,8 @@ void ModemManagement::loop()
                 break;
             }
 
-            gprsConnected = modem.isGprsConnected();
-            mqttConnected = mqtt.loop();
+            modemStatus.gprsConnected = modem.isGprsConnected();
+            modemStatus.mqttConnected = mqtt.loop();
 
             tryToSendMqttData();
 
@@ -317,13 +327,13 @@ void ModemManagement::loop()
 
             if (modemConnectRequest)
             {
-                if (!gprsConnected)
+                if (!modemStatus.gprsConnected)
                 {
                     logger.logPrintF(LogSeverity::INFO, MODULE, "Trying to connect GPRS");
                     state = ModemManagementState::GPRS_CONNECTING;
                     break;
                 }
-                if (!mqttConnected)
+                if (!modemStatus.mqttConnected)
                 {
                     logger.logPrintF(LogSeverity::INFO, MODULE, "Trying to connect MQTT");
                     state = ModemManagementState::MQTT_CONNECTING;
@@ -333,7 +343,7 @@ void ModemManagement::loop()
 
             if (gpsEnabledRequest)
             {
-                if (!gpsEnabled)
+                if (!modemStatus.gpsEnabled)
                 {
                     logger.logPrintF(LogSeverity::INFO, MODULE, "GPS enable request");
                     state = ModemManagementState::GPS_POWERING_ON;
@@ -342,7 +352,7 @@ void ModemManagement::loop()
             }
             else
             {
-                if (gpsEnabled)
+                if (modemStatus.gpsEnabled)
                 {
                     logger.logPrintF(LogSeverity::INFO, MODULE, "GPS disable request");
                     state = ModemManagementState::GPS_POWERING_OFF;
@@ -368,6 +378,11 @@ void ModemManagement::subscribe(MqttSubscribedTopic *topic)
 bool ModemManagement::mqttPublish(MqttTxItem &txItem)
 {
     return pdTRUE == xQueueSend(queues.modemMqttTxQueue, &txItem, 0);
+}
+
+ModemStatusData &ModemManagement::getModemStatusData()
+{
+    return modemStatus;
 }
 
 void ModemManagement::checkGpsInterval()
@@ -443,19 +458,31 @@ void ModemManagement::checkModemInfoInterval()
         }
 
         modem.sendAT(GF("+CPSI?"));
-        if (modem.waitResponse(GF("+CPSI:")) == 1)
+        if (modem.waitResponse(GF("+CPSI: ")) == 1)
         {
             modemStatus.gsmNetworkType = modem.stream.readStringUntil(',');
-            modem.stream.readStringUntil(',');
-            modemStatus.gsmOperator = modem.stream.readStringUntil(',');
-            modem.stream.readStringUntil(',');
-            modem.stream.readStringUntil(',');
-            modem.stream.readStringUntil(',');
-            modem.stream.readStringUntil(',');
-            modemStatus.gsmFrequency = modem.stream.readStringUntil(',');
-            modem.stream.readStringUntil('\n');
+            if (modemStatus.gsmNetworkType.equals("LTE"))
+            {
+                modem.stream.readStringUntil(',');                            // Operation Mode
+                modemStatus.gsmOperator = modem.stream.readStringUntil(',');  // MCC
+                modem.stream.readStringUntil(',');                            // MNC
+                modem.stream.readStringUntil(',');                            // TAC
+                modem.stream.readStringUntil(',');                            // SCellID
+                modem.stream.readStringUntil(',');                            // PCEllID
+                modemStatus.gsmFrequency = modem.stream.readStringUntil(','); // FrequencyBand
+                modem.stream.readStringUntil('\n');
 
-            modem.waitResponse();
+                modem.waitResponse();
+            }
+            else if (modemStatus.gsmNetworkType.equals("GSM"))
+            {
+                modem.stream.readStringUntil(',');                           // Operation Mode
+                modemStatus.gsmOperator = modem.stream.readStringUntil(','); // MCC
+                modemStatus.gsmFrequency = "-";
+                modem.stream.readStringUntil('\n');
+
+                modem.waitResponse();
+            }
 
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Network type: %s", modemStatus.gsmNetworkType.c_str());
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Operator: %s", modemStatus.gsmOperator.c_str());
@@ -466,7 +493,7 @@ void ModemManagement::checkModemInfoInterval()
 
 void ModemManagement::tryToSendMqttData()
 {
-    if (mqttConnected)
+    if (modemStatus.mqttConnected)
     {
         MqttTxItem item;
         while (pdTRUE == xQueuePeek(queues.modemMqttTxQueue, &item, 0))
@@ -475,6 +502,10 @@ void ModemManagement::tryToSendMqttData()
             {
                 logger.logPrintF(LogSeverity::DEBUG, MODULE, "Published MQTT data to topic: %s", item.topic);
                 xQueueReceive(queues.modemMqttTxQueue, &item, 0);
+            }
+            else
+            {
+                break;
             }
         }
     }

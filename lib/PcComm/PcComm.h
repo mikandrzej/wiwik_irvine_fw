@@ -3,12 +3,14 @@
 #include <vector>
 #include <Arduino.h>
 #include <PcCommand.h>
+#include <SimpleIntervalTimer.h>
 
 class PcComm
 {
 public:
     PcComm(HardwareSerial &hwSerial);
     void loop();
+
 
 private:
     HardwareSerial &serial;
@@ -26,6 +28,8 @@ private:
     };
     char rxBuffer[1024];
     uint16_t rxBufferPos = 0u;
+    
+    SimpleIntervalTimer cyclicInfoInterval = {1000u};
 
     void parseBuffer();
     bool handleApnCommand(char *data);
@@ -33,6 +37,8 @@ private:
     bool handleMqttServerCommand(char *data);
     bool handleBleDeviceCommand(char *data);
     bool handleBatteryCalibrationCommand(char *data);
+    
+    void sendModemStatus();
 };
 
 extern PcComm pcComm;

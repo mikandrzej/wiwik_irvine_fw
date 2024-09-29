@@ -21,6 +21,7 @@ enum class ModemManagementState
 {
     POWER_OFF,
     MODEM_POWERING_ON,
+    MODEM_SIM_UNLOCK,
     MODEM_SLEEP_ON,
     MODEM_SLEEP_OFF,
     GPRS_CONNECTING,
@@ -54,6 +55,8 @@ public:
 
     GpsData &getLastGpsData();
     GpsData &getLastValidGpsData();
+    ModemStatusData &getModemStatusData();
+    
 
 private:
     void checkGpsInterval();
@@ -74,14 +77,8 @@ private:
     bool modemConnectRequest = true;
     bool gpsEnabledRequest = true;
 
-    bool gpsEnabled = false;
-    bool modemPoweredOn = false;
-    bool modemConnected = false;
-    bool gprsConnected = false;
-    bool mqttConnected = false;
-
     SimpleIntervalTimer gpsDataInterval = {1000u};
-    SimpleIntervalTimer modemDataInterval = {60000u};
+    SimpleIntervalTimer modemDataInterval = {5000u};
 
     static SemaphoreHandle_t gpsDataMutex;
     GpsData lastGpsData = {};

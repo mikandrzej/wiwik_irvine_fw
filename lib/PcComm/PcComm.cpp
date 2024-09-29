@@ -2,6 +2,8 @@
 #include <IrvineConfiguration.h>
 #include <Service.h>
 #include <Logger.h>
+#include <ModemStatusData.h>
+#include <ModemManagement.h>
 
 const char MODULE[] = "PCCOMM";
 
@@ -32,6 +34,33 @@ void PcComm::loop()
             rxBuffer[rxBufferPos++] = newChar;
         }
     }
+
+    if (cyclicInfoInterval.check())
+    {
+        sendModemStatus();
+    }
+}
+
+void PcComm::sendModemStatus()
+{
+    ModemStatusData status = modemManagement.getModemStatusData();
+
+    serial.printf("+MODEM: %d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d\n",
+                  status.pinEnabled,
+                  status.simReady,
+                  status.modemPoweredOn,
+                  status.gprsConnected,
+                  status.mqttConnected,
+                  status.gpsEnabled,
+                  status.modemName.c_str(),
+                  status.modemModel.c_str(),
+                  status.modemImei.c_str(),
+                  status.simCcid.c_str(),
+                  status.simImsi.c_str(),
+                  status.gsmOperator.c_str(),
+                  status.gsmNetworkType.c_str(),
+                  status.gsmFrequency.c_str(),
+                  status.signal);
 }
 
 void PcComm::parseBuffer()
