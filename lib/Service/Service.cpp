@@ -110,16 +110,23 @@ void Service::mqttCalibrationMessageReceived(char *topic, uint8_t *message, unsi
     }
     if (doc.containsKey("set_voltage"))
     {
-        bool valid = false;
         float ref_value = doc["set_voltage"].as<float>();
-        float meas_value = vehicle.getVccVoltage(&valid, true);
-        if (valid)
+        batteryCalibration(ref_value);
+    }
+}
+
+bool Service::batteryCalibration(const float reference_voltage)
+{
+    bool valid = false;
+    float meas_value = vehicle.getVccVoltage(&valid, true);
+    if (valid)
+    {
+        float calibration_scale = reference_voltage / meas_value;
+        if (irvineConfiguration.setParameter("dev.batCalib", calibration_scale))
         {
-            float calibration_scale = ref_value / meas_value;
-            if (irvineConfiguration.setParameter("dev.batCalib", calibration_scale))
-            {
-                logger.logPrintF(LogSeverity::INFO, MODULE, "Calibration done. Scale: %f", calibration_scale);
-            }
+            logger.logPrintF(LogSeverity::INFO, MODULE, "Calibration done. Scale: %f", calibration_scale);
+            return true;
         }
     }
+    return false;
 }

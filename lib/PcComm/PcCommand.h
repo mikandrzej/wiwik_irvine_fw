@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-using PcCommandCallback = std::function<void(char *)>;
+using PcCommandCallback = std::function<bool(char *)>;
 
 class PcCommand
 {

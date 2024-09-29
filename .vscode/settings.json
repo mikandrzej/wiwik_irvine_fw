@@ -54,7 +54,9 @@
         "ios": "cpp",
         "locale": "cpp",
         "queue": "cpp",
-        "cstdbool": "cpp"
+        "cstdbool": "cpp",
+        "pccomm.h": "c"
     },
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "C_Cpp.errorSquiggles": "disabled"
 }

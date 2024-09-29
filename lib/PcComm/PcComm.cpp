@@ -1,5 +1,6 @@
 #include "PcComm.h"
 #include <IrvineConfiguration.h>
+#include <Service.h>
 #include <Logger.h>
 
 const char MODULE[] = "PCCOMM";
@@ -45,7 +46,15 @@ void PcComm::parseBuffer()
             {
                 bufPtr += _command.getCommandLen();
                 auto callback = _command.getCallback();
-                callback(bufPtr);
+                bool result = callback(bufPtr);
+                if (result)
+                {
+                    serial.printf("OK\n");
+                }
+                else
+                {
+                    serial.printf("ERROR\n");
+                }
                 return;
             }
         }
@@ -54,11 +63,12 @@ void PcComm::parseBuffer()
     }
 }
 
-void PcComm::handleApnCommand(char *data)
+bool PcComm::handleApnCommand(char *data)
 {
+    bool result = true;
     if (data[0] == '?')
     {
-        serial.printf("+APN=%s,%s,%s\n", irvineConfiguration.modem.apn, irvineConfiguration.modem.apnUsername, irvineConfiguration.modem.apnPassword);
+        serial.printf("+APN: %s,%s,%s\n", irvineConfiguration.modem.apn, irvineConfiguration.modem.apnUsername, irvineConfiguration.modem.apnPassword);
     }
     else if (data[0] == '=')
     {
@@ -67,10 +77,13 @@ void PcComm::handleApnCommand(char *data)
         char *username = strtok(NULL, ",");
         char *pass = strtok(NULL, "\n\r");
 
-        bool result = true;
-
-        if (!apn || !username || !pass)
+        if (!apn)
             result = false;
+
+        if (!username)
+            username = "";
+        if (!pass)
+            pass = "";
 
         if (result)
         {
@@ -78,42 +91,33 @@ void PcComm::handleApnCommand(char *data)
             result &= irvineConfiguration.setParameter("mdm.apnUser", username);
             result &= irvineConfiguration.setParameter("mdm.apnPass", pass);
         }
-
-        if (result)
-        {
-            serial.printf("OK\n");
-        }
-        else
-        {
-            serial.printf("ERROR\n");
-        }
     }
+    return result;
 }
 
-void PcComm::handleSimPinCommand(char *data)
+bool PcComm::handleSimPinCommand(char *data)
 {
+    bool result = true;
     if (data[0] == '?')
     {
-        serial.printf("+SIM_PIN=%s\n", irvineConfiguration.modem.pin);
+        serial.printf("+SIM_PIN: %s\n", irvineConfiguration.modem.pin);
     }
     else if (data[0] == '=')
     {
         char *bufPtr = &data[1u];
 
-        bool result = irvineConfiguration.setParameter("mdm.pin", bufPtr);
-
-        if (result)
-            serial.printf("OK\n");
-        else
-            serial.printf("ERROR\n");
+        result = irvineConfiguration.setParameter("mdm.pin", bufPtr);
     }
+
+    return result;
 }
 
-void PcComm::handleMqttServerCommand(char *data)
+bool PcComm::handleMqttServerCommand(char *data)
 {
+    bool result = true;
     if (data[0] == '?')
     {
-        serial.printf("+MQTT_SERVER=%s,%u,%s,%s\n",
+        serial.printf("+MQTT_SERVER: %s,%u,%s,%s\n",
                       irvineConfiguration.server.mqttHost,
                       irvineConfiguration.server.mqttPort,
                       irvineConfiguration.server.mqttUsername,
@@ -127,28 +131,31 @@ void PcComm::handleMqttServerCommand(char *data)
         char *username = strtok(NULL, ",");
         char *password = strtok(NULL, "\n\r");
 
-        bool result = true;
+        if (!server)
+            server = "";
+        if (!port)
+            port = "0";
+        if (!username)
+            username = "";
+        if (!password)
+            password = "";
 
-        if (!port || !username || !password)
-            result = false;
-
-        if (result)
-        {
-            result &= irvineConfiguration.setParameter("srv.mqttHost", server);
-            result &= irvineConfiguration.setParameter("srv.mqttPort", port);
-            result &= irvineConfiguration.setParameter("srv.mqttUser", username);
-            result &= irvineConfiguration.setParameter("srv.mqttPass", password);
-        }
-
-        if (result)
-            serial.printf("OK\n");
-        else
-            serial.printf("ERROR\n");
+        result &= irvineConfiguration.setParameter("srv.mqttHost", server);
+        result &= irvineConfiguration.setParameter("srv.mqttPort", port);
+        result &= irvineConfiguration.setParameter("srv.mqttUser", username);
+        result &= irvineConfiguration.setParameter("srv.mqttPass", password);
     }
+    else
+    {
+        result = false;
+    }
+
+    return result;
 }
 
-void PcComm::handleBleDeviceCommand(char *data)
+bool PcComm::handleBleDeviceCommand(char *data)
 {
+    bool result = true;
     if (data[0] == '?')
     {
         for (uint16_t k = 0u; k < MAX_BLUETOOTH_DEVICES; k++)
@@ -163,7 +170,7 @@ void PcComm::handleBleDeviceCommand(char *data)
                     device->macAddress[4],
                     device->macAddress[5]);
 
-            serial.printf("+BLE_DEV=%u,%u,%s,%u\n",
+            serial.printf("+BLE_DEV: %u,%u,%s,%u\n",
                           k,
                           static_cast<uint32_t>(device->type),
                           mac,
@@ -178,10 +185,17 @@ void PcComm::handleBleDeviceCommand(char *data)
         char *mac = strtok(NULL, ",");
         char *minInterval = strtok(NULL, "\n\r");
 
-        bool result = true;
-
         if (!dev || !type || !mac || !minInterval)
             result = false;
+
+        if (!dev)
+            dev = "";
+        if (!type)
+            type = "0";
+        if (!mac)
+            mac = "000000000000";
+        if (!minInterval)
+            minInterval = "0";
 
         if (result)
         {
@@ -193,10 +207,30 @@ void PcComm::handleBleDeviceCommand(char *data)
             snprintf(param, 20, "ble[%s].minIval", dev);
             result &= irvineConfiguration.setParameter(param, minInterval);
         }
-
-        if (result)
-            serial.printf("OK\n");
-        else
-            serial.printf("ERROR\n");
     }
+    else
+    {
+        result = false;
+    }
+    return result;
+}
+
+bool PcComm::handleBatteryCalibrationCommand(char *data)
+{
+    bool result = false;
+    if (data[0] == '=')
+    {
+        char *bufPtr = &data[1u];
+        char *ref_voltage = strtok(bufPtr, "\n\r");
+
+        if (ref_voltage)
+        {
+            float ref_voltage_value = atoff(ref_voltage);
+            if (ref_voltage_value != 0.0f)
+            {
+                result = service.batteryCalibration(ref_voltage_value);
+            }
+        }
+    }
+    return result;
 }

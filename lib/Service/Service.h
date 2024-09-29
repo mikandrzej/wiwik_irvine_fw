@@ -12,6 +12,8 @@ public:
     void mqttUpdateMessageReceived(char *topic, uint8_t *message, unsigned int length);
     void mqttCalibrationMessageReceived(char *topic, uint8_t *message, unsigned int length);
 
+    bool batteryCalibration(const float reference_voltage);
+
 private:
     MqttSubscribedTopic *mqttSubTopicSetConfig;
     MqttSubscribedTopic *mqttSubTopicUpdate;

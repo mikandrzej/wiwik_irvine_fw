@@ -14,22 +14,25 @@ private:
     HardwareSerial &serial;
     std::vector<PcCommand> commands = {
         PcCommand("APN", [this](char *data)
-                  { handleApnCommand(data); }),
+                  { return handleApnCommand(data); }),
         PcCommand("SIM_PIN", [this](char *data)
-                  { handleSimPinCommand(data); }),
+                  { return handleSimPinCommand(data); }),
         PcCommand("MQTT_SERVER", [this](char *data)
-                  { handleMqttServerCommand(data); }),
+                  { return handleMqttServerCommand(data); }),
         PcCommand("BLE_DEV", [this](char *data)
-                  { handleBleDeviceCommand(data); }),
+                  { return handleBleDeviceCommand(data); }),
+        PcCommand("BATT_CAL", [this](char *data)
+                  { return handleBatteryCalibrationCommand(data); }),
     };
     char rxBuffer[1024];
     uint16_t rxBufferPos = 0u;
 
     void parseBuffer();
-    void handleApnCommand(char *data);
-    void handleSimPinCommand(char *data);
-    void handleMqttServerCommand(char *data);
-    void handleBleDeviceCommand(char *data);
+    bool handleApnCommand(char *data);
+    bool handleSimPinCommand(char *data);
+    bool handleMqttServerCommand(char *data);
+    bool handleBleDeviceCommand(char *data);
+    bool handleBatteryCalibrationCommand(char *data);
 };
 
 extern PcComm pcComm;
