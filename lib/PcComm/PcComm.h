@@ -25,6 +25,8 @@ private:
                   { return handleBleDeviceCommand(data); }),
         PcCommand("BATT_CAL", [this](char *data)
                   { return handleBatteryCalibrationCommand(data); }),
+        PcCommand("DEVICE", [this](char *data)
+                  { return handleDeviceCommand(data); }),
     };
     char rxBuffer[1024];
     uint16_t rxBufferPos = 0u;
@@ -37,6 +39,7 @@ private:
     bool handleMqttServerCommand(char *data);
     bool handleBleDeviceCommand(char *data);
     bool handleBatteryCalibrationCommand(char *data);
+    bool handleDeviceCommand(char *data);
     
     void sendModemStatus();
 };

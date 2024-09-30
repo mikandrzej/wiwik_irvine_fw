@@ -45,7 +45,7 @@ void PcComm::sendModemStatus()
 {
     ModemStatusData status = modemManagement.getModemStatusData();
 
-    serial.printf("+MODEM: %d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d\n",
+    serial.printf("+STATUS: %d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%s\n",
                   status.pinEnabled,
                   status.simReady,
                   status.modemPoweredOn,
@@ -60,7 +60,8 @@ void PcComm::sendModemStatus()
                   status.gsmOperator.c_str(),
                   status.gsmNetworkType.c_str(),
                   status.gsmFrequency.c_str(),
-                  status.signal);
+                  status.signal,
+                  irvineConfiguration.device.deviceId);
 }
 
 void PcComm::parseBuffer()
@@ -261,5 +262,41 @@ bool PcComm::handleBatteryCalibrationCommand(char *data)
             }
         }
     }
+    return result;
+}
+
+bool PcComm::handleDeviceCommand(char *data)
+{
+    bool result = true;
+    if (data[0] == '?')
+    {
+        serial.printf("+DEVICE: %f,%d,%lu,%s,%f\n",
+                      irvineConfiguration.device.ignitionVoltageThreshold,
+                      irvineConfiguration.device.ignitionOffDelay,
+                      irvineConfiguration.device.logSeverity,
+                      irvineConfiguration.device.deviceId,
+                      irvineConfiguration.device.batteryCalibrationScale);
+    }
+    else if (data[0] == '=')
+    {
+        char *bufPtr = &data[1u];
+        char *ignTreshold = strtok(bufPtr, ",");
+        char *logSev = strtok(NULL, ",");
+        char *ignOffDel = strtok(NULL, "\n\r");
+
+        if (!ignTreshold || !logSev || !ignOffDel)
+            result = false;
+        if (result)
+        {
+            result &= irvineConfiguration.setParameter("dev.ignVolThr", ignTreshold);
+            // result &= irvineConfiguration.setParameter("dev.logSev", logSev);
+            result &= irvineConfiguration.setParameter("dev.ignOffDelay", ignOffDel);
+        }
+    }
+    else
+    {
+        result = false;
+    }
+
     return result;
 }

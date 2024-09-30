@@ -82,11 +82,11 @@ bool Vehicle::isEngineRunningBasedOnVoltage(bool *valid)
             *valid = false;
     }
 
-    if (voltage < 13.5f)
+    if (voltage < irvineConfiguration.device.ignitionVoltageThreshold)
         return false;
     else if (voltage < 18.0f)
         return true;
-    else if (voltage < 27.0f)
+    else if (voltage < (irvineConfiguration.device.ignitionVoltageThreshold * 2.0f))
         return false;
     else
         return true;
