@@ -33,6 +33,21 @@ uint64_t Device::getUnixTimestamp()
     return getFallbackUnixTimestamp();
 }
 
+uint64_t Device::getGpsUnixTimestamp()
+{
+    return calculateUnixTimestamp(gpsUnixTime, gpsUnixTimeTimestamp);
+}
+
+uint64_t Device::getGsmUnixTimestamp()
+{
+    return calculateUnixTimestamp(gsmUnixTime, gsmUnixTimeTimestamp);
+}
+
+uint64_t Device::getNtpUnixTimestamp()
+{
+    return calculateUnixTimestamp(ntpUnixTime, ntpUnixTimeTimestamp);
+}
+
 uint64_t Device::getFallbackUnixTimestamp()
 {
     if (gpsUnixTime > 0)
@@ -53,6 +68,8 @@ uint64_t Device::getFallbackUnixTimestamp()
 
 uint64_t Device::calculateUnixTimestamp(const uint64_t lastValue, const uint32_t lastTimestamp)
 {
+    if (!lastValue)
+        return 0;
     uint32_t msSinceLastValue = millis() - lastTimestamp;
     msSinceLastValue /= 1000u;
     // logger.logPrintF(LogSeverity::DEBUG, MODULE, "msSince: %lu, lastVal: %llu, lastTimestamp: %lu", msSinceLastValue, lastValue, lastTimestamp);

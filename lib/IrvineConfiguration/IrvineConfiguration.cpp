@@ -81,6 +81,7 @@ static ConfigurationParameter parameters[] = {
     {"dev.privBusRide", ConfigurationParameterType::BOOL, &irvineConfiguration.device.privateBusinessRide, 0},
     {"dev.deviceId", ConfigurationParameterType::STR, &irvineConfiguration.device.deviceId, sizeof(irvineConfiguration.device.deviceId)},
     {"dev.batCalib", ConfigurationParameterType::FLOAT, &irvineConfiguration.device.batteryCalibrationScale, 0},
+    {"dev.password", ConfigurationParameterType::STR, &irvineConfiguration.device.password, sizeof(irvineConfiguration.device.password)},
 
     {"acc.movThre", ConfigurationParameterType::UINT, &irvineConfiguration.accelerometer.movementThreshold, 0},
     {"acc.movStopDel", ConfigurationParameterType::UINT, &irvineConfiguration.accelerometer.movementStopDelay, 0},

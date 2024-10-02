@@ -4,6 +4,8 @@
 #include <Logger.h>
 #include <ModemStatusData.h>
 #include <ModemManagement.h>
+#include <Device.h>
+#include <Vehicle.h>
 
 const char MODULE[] = "PCCOMM";
 
@@ -26,8 +28,8 @@ void PcComm::loop()
 
             rxBuffer[rxBufferPos] = '\0';
             parseBuffer();
-
             rxBufferPos = 0u;
+            break;
         }
         else
         {
@@ -45,7 +47,7 @@ void PcComm::sendModemStatus()
 {
     ModemStatusData status = modemManagement.getModemStatusData();
 
-    serial.printf("+STATUS: %d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%s\n",
+    serial.printf("+STATUS: %d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%s,%lu,%llu,%llu,%llu,%.2f\n",
                   status.pinEnabled,
                   status.simReady,
                   status.modemPoweredOn,
@@ -61,7 +63,12 @@ void PcComm::sendModemStatus()
                   status.gsmNetworkType.c_str(),
                   status.gsmFrequency.c_str(),
                   status.signal,
-                  irvineConfiguration.device.deviceId);
+                  irvineConfiguration.device.deviceId,
+                  millis(),
+                  device.getGpsUnixTimestamp(),
+                  device.getGsmUnixTimestamp(),
+                  device.getNtpUnixTimestamp(),
+                  vehicle.getVccVoltage());
 }
 
 void PcComm::parseBuffer()
@@ -270,7 +277,7 @@ bool PcComm::handleDeviceCommand(char *data)
     bool result = true;
     if (data[0] == '?')
     {
-        serial.printf("+DEVICE: %f,%d,%lu,%s,%f\n",
+        serial.printf("+DEVICE: %lu,%lu,%lu,%s,%f\n",
                       irvineConfiguration.device.ignitionVoltageThreshold,
                       irvineConfiguration.device.ignitionOffDelay,
                       irvineConfiguration.device.logSeverity,
@@ -296,6 +303,26 @@ bool PcComm::handleDeviceCommand(char *data)
     else
     {
         result = false;
+    }
+
+    return result;
+}
+
+bool PcComm::handleLoginCommand(char *data)
+{
+    bool result = false;
+    if (data[0] == '=')
+    {
+        char *bufPtr = &data[1u];
+        char *password = strtok(bufPtr, "\n\r");
+
+        if (!password)
+            password = "";
+        if (0 == strcmp(password, irvineConfiguration.device.password))
+        {
+            loggedIn = true;
+            result = true;
+        }
     }
 
     return result;

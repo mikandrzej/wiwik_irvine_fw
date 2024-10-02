@@ -17,4 +17,5 @@ public:
     char deviceId[50u] = {0u};
     LogSeverity logSeverity = LogSeverity::ERROR;
     float batteryCalibrationScale = 1.0f;
+    char password[20] = {0u};
 };

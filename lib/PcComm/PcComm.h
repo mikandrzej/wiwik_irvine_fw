@@ -27,11 +27,15 @@ private:
                   { return handleBatteryCalibrationCommand(data); }),
         PcCommand("DEVICE", [this](char *data)
                   { return handleDeviceCommand(data); }),
+        PcCommand("LOGIN", [this](char *data)
+                  { return handleLoginCommand(data); }),
     };
     char rxBuffer[1024];
     uint16_t rxBufferPos = 0u;
     
     SimpleIntervalTimer cyclicInfoInterval = {1000u};
+
+    bool loggedIn = false;
 
     void parseBuffer();
     bool handleApnCommand(char *data);
@@ -40,7 +44,9 @@ private:
     bool handleBleDeviceCommand(char *data);
     bool handleBatteryCalibrationCommand(char *data);
     bool handleDeviceCommand(char *data);
-    
+
+    bool handleLoginCommand(char *data);
+
     void sendModemStatus();
 };
 

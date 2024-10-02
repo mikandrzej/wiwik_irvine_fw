@@ -7,6 +7,10 @@ class Device
 public:
     uint64_t getUnixTimestamp();
 
+    uint64_t getGpsUnixTimestamp();
+    uint64_t getGsmUnixTimestamp();
+    uint64_t getNtpUnixTimestamp();
+
     void updateGpsTime(uint64_t unixTime);
     void updateGsmTime(uint64_t unixTime);
     void updateNtpTime(uint64_t unixTime);

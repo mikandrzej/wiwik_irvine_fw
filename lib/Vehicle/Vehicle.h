@@ -8,7 +8,7 @@ public:
     void init();
     void loop();
 
-    float getVccVoltage(bool *valid, const bool raw = false);
+    float getVccVoltage(bool *valid = nullptr, const bool raw = false);
     bool isIgnitionOn(bool *valid);
     bool isEngineRunningBasedOnVoltage(bool *valid);
     bool isMoving(bool *valid);

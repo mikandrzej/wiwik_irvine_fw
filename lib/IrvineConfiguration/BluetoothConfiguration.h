@@ -9,7 +9,7 @@ enum class BluetoothDeviceType
     NONE,
     JAALEE_SENSOR,
     M52PAS_SENSOR,
-    ALCOHOL_SENSOR,
+    TELTONIKA_SENSOR,
     // Add more types as needed
 };
 

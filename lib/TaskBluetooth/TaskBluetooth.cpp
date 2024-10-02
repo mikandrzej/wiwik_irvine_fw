@@ -44,6 +44,18 @@ TaskBluetooth bluetoothTaskData;
 
 void taskBluetooth(void *pvParameters)
 {
+    bool configEntryExist = false;
+    for (auto &device : irvineConfiguration.bluetooth.devices)
+    {
+        if (device.type != BluetoothDeviceType::NONE)
+        {
+            configEntryExist = true;
+            break;
+        }
+    }
+    if (!configEntryExist)
+        vTaskDelete(NULL);
+
     bluetoothTaskData.setup();
     // todo move below to setup
 

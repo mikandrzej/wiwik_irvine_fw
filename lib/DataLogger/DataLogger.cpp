@@ -101,17 +101,18 @@ void DataLogger::logData(DataLoggerQueueItem &data)
 
     uint32_t logDataLen = strlen(data.logData);
     size_t savedLen = file.write((uint8_t *)data.logData, logDataLen);
+    savedLen += file.write((const uint8_t *)"\r\n", 2);
 
     file.flush();
 
-    if (savedLen == logDataLen)
+    if (savedLen == logDataLen + 2u)
     {
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Logged data");
     }
     else
     {
         int error = file.getWriteError();
-        logger.logPrintF(LogSeverity::ERROR, MODULE, "Data log error %d, logged: %d, expexted: %d", error, savedLen, logDataLen);
+        logger.logPrintF(LogSeverity::ERROR, MODULE, "Data log error %d, logged: %d, expexted: %d", error, savedLen, logDataLen + 2u);
     }
 
     file.close();
