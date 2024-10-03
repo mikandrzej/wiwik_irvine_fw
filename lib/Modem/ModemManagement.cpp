@@ -285,47 +285,81 @@ void ModemManagement::loop()
         state = ModemManagementState::IDLE;
         break;
 
-    case ModemManagementState::GPS_POWERING_ON:
+    case ModemManagementState::GPS_POWERING_ON1:
         logger.logPrintF(LogSeverity::INFO, MODULE, "GPS initialization start...");
         modem.sendAT("+CGNSSPWR=0");
-        if (modem.waitResponse(1000) == 1)
+        state = ModemManagementState::GPS_POWERING_ON2;
+        sm_timestamp = millis();
+        break;
+
+    case ModemManagementState::GPS_POWERING_ON2:
+    {
+        int8_t response = modem.waitResponse(0u);
+        if (response == 1)
         {
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS initialization 1st stage done");
             modem.sendAT("+CGNSSPWR=1");
-            if (modem.waitResponse(1000) == 1)
-            {
-                logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS initialization 2nd stage done");
-                if (modem.waitResponse(20000UL, "+CGNSSPWR: READY!") == 1)
-                {
-                    logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS initialization 3rd stage done");
-                    modem.sendAT("+CGNSSMODE=3");
-                    if (modem.waitResponse(1000) == 1)
-                    {
-                        logger.logPrintF(LogSeverity::INFO, MODULE, "GPS initialization done");
-                        modemStatus.gpsEnabled = true;
-                    }
-                    else
-                    {
-                        logger.logPrintF(LogSeverity::ERROR, MODULE, "GPS initialization 4th stage error");
-                    }
-                }
-                else
-                {
-                    logger.logPrintF(LogSeverity::ERROR, MODULE, "GPS initialization 3rd stage error");
-                }
-            }
-            else
-            {
-                logger.logPrintF(LogSeverity::ERROR, MODULE, "GPS initialization 2nd stage error");
-            }
+            state = ModemManagementState::GPS_POWERING_ON3;
+            sm_timestamp = millis();
         }
-        else
+        else if (!response && ((millis() - sm_timestamp) >= 1000))
         {
             logger.logPrintF(LogSeverity::ERROR, MODULE, "GPS initialization 1st stage error");
+            state = ModemManagementState::IDLE;
         }
-
-        state = ModemManagementState::IDLE;
         break;
+    }
+
+    case ModemManagementState::GPS_POWERING_ON3:
+    {
+        int8_t response = modem.waitResponse(0u);
+        if (response == 1)
+        {
+            logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS initialization 2nd stage done");
+            state = ModemManagementState::GPS_POWERING_ON4;
+            sm_timestamp = millis();
+        }
+        else if (!response && ((millis() - sm_timestamp) >= 1000))
+        {
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "GPS initialization 2nd stage error");
+            state = ModemManagementState::IDLE;
+        }
+        break;
+    }
+
+    case ModemManagementState::GPS_POWERING_ON4:
+    {
+        int8_t response = modem.waitResponse(0u, "+CGNSSPWR: READY!");
+        if (response == 1)
+        {
+            logger.logPrintF(LogSeverity::DEBUG, MODULE, "GPS initialization 3rd stage done");
+            modem.sendAT("+CGNSSMODE=3");
+            sm_timestamp = millis();
+            state = ModemManagementState::GPS_POWERING_ON5;
+        }
+        else if (!response && ((millis() - sm_timestamp) >= 20000))
+        {
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "GPS initialization 3rd stage error");
+            state = ModemManagementState::IDLE;
+        }
+        break;
+    }
+    case ModemManagementState::GPS_POWERING_ON5:
+    {
+        int8_t response = modem.waitResponse(0u);
+        if (response == 1)
+        {
+            logger.logPrintF(LogSeverity::INFO, MODULE, "GPS initialization done");
+            modemStatus.gpsEnabled = true;
+            state = ModemManagementState::IDLE;
+        }
+        else if (!response && ((millis() - sm_timestamp) >= 20000))
+        {
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "GPS initialization 4th stage error");
+            state = ModemManagementState::IDLE;
+        }
+        break;
+    }
 
     case ModemManagementState::IDLE:
 
@@ -369,7 +403,7 @@ void ModemManagement::loop()
                 if (!modemStatus.gpsEnabled)
                 {
                     logger.logPrintF(LogSeverity::INFO, MODULE, "GPS enable request");
-                    state = ModemManagementState::GPS_POWERING_ON;
+                    state = ModemManagementState::GPS_POWERING_ON1;
                     break;
                 }
             }
