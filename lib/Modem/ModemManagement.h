@@ -20,7 +20,11 @@ using MqttCallback = std::function<void(char *, uint8_t *, unsigned int)>;
 enum class ModemManagementState
 {
     POWER_OFF,
-    MODEM_POWERING_ON,
+    MODEM_POWERING_ON1,
+    MODEM_POWERING_ON2,
+    MODEM_POWERING_ON3,
+    MODEM_POWERING_ON4,
+    MODEM_POWERING_ON5,
     MODEM_SIM_UNLOCK,
     MODEM_SLEEP_ON,
     MODEM_SLEEP_OFF,
@@ -85,6 +89,7 @@ private:
     GpsData lastValidGpsData = {};
 
     std::vector<MqttSubscribedTopic *> subscribedTopics;
+    uint32_t sm_timestamp;
 };
 
 extern ModemManagement modemManagement;

@@ -49,30 +49,52 @@ void ModemManagement::loop()
     case ModemManagementState::POWER_OFF:
         if (modemPowerOnRequest)
         {
-            state = ModemManagementState::MODEM_POWERING_ON;
+            state = ModemManagementState::MODEM_POWERING_ON1;
         }
         break;
 
-    case ModemManagementState::MODEM_POWERING_ON:
-        success = true;
+    case ModemManagementState::MODEM_POWERING_ON1:
 
         logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem reset");
         // digitalWrite(BOARD_MODEM_PWR_PIN, HIGH);
         // digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
         // vTaskDelay(pdMS_TO_TICKS(100));
         digitalWrite(BOARD_MODEM_RESET_PIN, HIGH);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
+        sm_timestamp = millis();
+        state = ModemManagementState::MODEM_POWERING_ON2;
+        break;
 
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem power up");
-        digitalWrite(BOARD_MODEM_PWR_PIN, HIGH);
-        vTaskDelay(pdMS_TO_TICKS(500));
-        digitalWrite(BOARD_MODEM_PWR_PIN, LOW);
+    case ModemManagementState::MODEM_POWERING_ON2:
+        if ((millis() - sm_timestamp) >= 2000)
+        {
+            digitalWrite(BOARD_MODEM_RESET_PIN, LOW);
+            digitalWrite(BOARD_MODEM_PWR_PIN, HIGH);
+            logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem power up");
+            sm_timestamp = millis();
+            state = ModemManagementState::MODEM_POWERING_ON3;
+        }
+        break;
 
-        logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem power up delay");
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        // todo wait for AT
+    case ModemManagementState::MODEM_POWERING_ON3:
+        if ((millis() - sm_timestamp) >= 500)
+        {
+            digitalWrite(BOARD_MODEM_PWR_PIN, LOW);
+            sm_timestamp = millis();
+            state = ModemManagementState::MODEM_POWERING_ON4;
+            logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem power up delay");
+        }
+        break;
 
+    case ModemManagementState::MODEM_POWERING_ON4:
+        if ((millis() - sm_timestamp) >= 5000)
+        {
+            state = ModemManagementState::MODEM_POWERING_ON5;
+        }
+        break;
+
+    case ModemManagementState::MODEM_POWERING_ON5:
+    {
+        success = true;
         SerialAT.end();
         SerialAT.begin(115200, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
 
@@ -102,8 +124,9 @@ void ModemManagement::loop()
 
             state = ModemManagementState::MODEM_SIM_UNLOCK;
         }
+    }
 
-        break;
+    break;
 
     case ModemManagementState::MODEM_SIM_UNLOCK:
     {
@@ -364,7 +387,7 @@ void ModemManagement::loop()
         {
             if (modemPowerOnRequest)
             {
-                state = ModemManagementState::MODEM_POWERING_ON;
+                state = ModemManagementState::MODEM_POWERING_ON1;
             }
         }
     }

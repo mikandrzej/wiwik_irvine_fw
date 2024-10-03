@@ -101,11 +101,12 @@ void taskBluetooth(void *pvParameters)
 
     esp_ble_gap_set_scan_params(&ble_scan_params);
 
-    while (1)
-    {
-        bluetoothTaskData.loop();
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    // while (1)
+    // {
+    //     bluetoothTaskData.loop();
+    //     vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
+    vTaskDelete(NULL);
 }
 
 static void esp_gatts_callback(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
