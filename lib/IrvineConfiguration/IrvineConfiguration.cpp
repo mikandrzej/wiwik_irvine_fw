@@ -194,7 +194,6 @@ bool IrvineConfiguration::begin()
     uint8_t mac[6];
     WiFi.macAddress(mac);
     sprintf(device.deviceId, "irvine_%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    device.batteryInterval = 60000u;
 
     // sprintf(server.mqttHost, "mqtt.7frost.com");
     // server.mqttPort = 1883u;
@@ -206,11 +205,11 @@ bool IrvineConfiguration::begin()
     // sprintf(modem.apnUsername, "");
     // sprintf(modem.apnPassword, "");
 
-    gps.maxInterval = 60000u;
-    gps.minimumDistance = 20u;
-    gps.stopLogInterval = 60000u;
-    gps.movementLogInterval = 10000u;
-    gps.minimumDistance = 100u;
+    // gps.maxInterval = 60000u;
+    // gps.minimumDistance = 20u;
+    // gps.stopLogInterval = 60000u;
+    // gps.movementLogInterval = 10000u;
+    // gps.minimumDistance = 100u;
 
     obd.speedActive = true;
     obd.speedInterval = 1000u;

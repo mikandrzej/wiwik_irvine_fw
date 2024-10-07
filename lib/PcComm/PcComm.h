@@ -29,6 +29,8 @@ private:
                   { return handleDeviceCommand(data); }),
         PcCommand("LOGIN", [this](char *data)
                   { return handleLoginCommand(data); }),
+        PcCommand("GPS_CFG", [this](char *data)
+                  { return handleGpsCfgCommand(data); }),
     };
     char rxBuffer[1024];
     uint16_t rxBufferPos = 0u;
@@ -44,6 +46,7 @@ private:
     bool handleBleDeviceCommand(char *data);
     bool handleBatteryCalibrationCommand(char *data);
     bool handleDeviceCommand(char *data);
+    bool handleGpsCfgCommand(char *data);
 
     bool handleLoginCommand(char *data);
 

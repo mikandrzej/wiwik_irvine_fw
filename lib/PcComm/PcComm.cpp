@@ -308,6 +308,74 @@ bool PcComm::handleDeviceCommand(char *data)
     return result;
 }
 
+bool PcComm::handleGpsCfgCommand(char *data)
+{
+    bool result = true;
+    if (data[0] == '?')
+    {
+        serial.printf("+GPS_CFG: %lu,%lu,%lu,%d,%lu,%lu,%lu,%lu,%d,%lu,%d\n",
+                      irvineConfiguration.gps.minimumDistance,
+                      irvineConfiguration.gps.maxInterval,
+                      irvineConfiguration.gps.sleepAfterIgnitionOffTimeout,
+                      irvineConfiguration.gps.freezePositionDuringStop,
+                      irvineConfiguration.gps.movementSpeedThreshold,
+                      irvineConfiguration.gps.movementStopDelay,
+                      irvineConfiguration.gps.movementLogInterval,
+                      irvineConfiguration.gps.stopLogInterval,
+                      irvineConfiguration.gps.highPrecisionOnDemand,
+                      irvineConfiguration.gps.highPrecisionOnDemandDuration,
+                      irvineConfiguration.gps.jammingDetection);
+    }
+    else if (data[0] == '=')
+    {
+        char *bufPtr = &data[1u];
+        const char *minimumDistance = strtok(bufPtr, ",");
+        const char *maxInterval = strtok(NULL, ",");
+        const char *sleepAfterIgnitionOffTimeout = strtok(NULL, ",");
+        const char *freezePositionDuringStop = strtok(NULL, ",");
+        const char *movementSpeedThreshold = strtok(NULL, ",");
+        const char *movementStopDelay = strtok(NULL, ",");
+        const char *movementLogInterval = strtok(NULL, ",");
+        const char *stopLogInterval = strtok(NULL, ",");
+        const char *highPrecisionOnDemand = strtok(NULL, ",");
+        const char *highPrecisionOnDemandDuration = strtok(NULL, ",");
+        const char *jammingDetection = strtok(NULL, "\n\r");
+
+        minimumDistance = minimumDistance ? minimumDistance : "";
+        maxInterval = maxInterval ? maxInterval : "";
+        sleepAfterIgnitionOffTimeout = sleepAfterIgnitionOffTimeout ? sleepAfterIgnitionOffTimeout : "";
+        freezePositionDuringStop = freezePositionDuringStop ? freezePositionDuringStop : "";
+        movementSpeedThreshold = movementSpeedThreshold ? movementSpeedThreshold : "";
+        movementStopDelay = movementStopDelay ? movementStopDelay : "";
+        movementLogInterval = movementLogInterval ? movementLogInterval : "";
+        stopLogInterval = stopLogInterval ? stopLogInterval : "";
+        highPrecisionOnDemand = highPrecisionOnDemand ? highPrecisionOnDemand : "";
+        highPrecisionOnDemandDuration = highPrecisionOnDemandDuration ? highPrecisionOnDemandDuration : "";
+        jammingDetection = jammingDetection ? jammingDetection : "";
+
+        if (result)
+        {
+            result &= irvineConfiguration.setParameter("gps.minDist", minimumDistance);
+            result &= irvineConfiguration.setParameter("gps.maxInterv", maxInterval);
+            result &= irvineConfiguration.setParameter("gps.slIgnTmt", sleepAfterIgnitionOffTimeout);
+            result &= irvineConfiguration.setParameter("gps.frPosStop", freezePositionDuringStop);
+            result &= irvineConfiguration.setParameter("gps.movSpdThr", movementSpeedThreshold);
+            result &= irvineConfiguration.setParameter("gps.movStopDly", movementStopDelay);
+            result &= irvineConfiguration.setParameter("gps.movInterv", movementLogInterval);
+            result &= irvineConfiguration.setParameter("gps.stopInterv", stopLogInterval);
+            result &= irvineConfiguration.setParameter("gps.hPrecOD", highPrecisionOnDemand);
+            result &= irvineConfiguration.setParameter("gps.hPrecODDur", highPrecisionOnDemandDuration);
+            result &= irvineConfiguration.setParameter("gps.jammDet", jammingDetection);
+        }
+    }
+    else
+    {
+        result = false;
+    }
+
+    return result;
+}
+
 bool PcComm::handleLoginCommand(char *data)
 {
     bool result = false;
