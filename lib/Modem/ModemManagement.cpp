@@ -37,6 +37,8 @@ bool ModemManagement::begin()
 
     mqtt.setCallback([this](char *topic, uint8_t *msg, unsigned int len)
                      { this->mqttMessageCallback(topic, msg, len); });
+
+                     state = ModemManagementState::IDLE;
     return true;
 }
 
@@ -365,6 +367,12 @@ void ModemManagement::loop()
 
         if (modemStatus.modemPoweredOn)
         {
+
+            if(!modem.testAT())
+            {
+                logger.logPrintF(LogSeverity::ERROR, MODULE, "Modem not responding - going to reset mode...");
+                state = ModemManagementState::MODEM_POWERING_ON1;
+            }
             if (!modemPowerOnRequest)
             {
                 logger.logPrintF(LogSeverity::INFO, MODULE, "Modem power OFF request");
@@ -540,10 +548,18 @@ void ModemManagement::checkModemInfoInterval()
 
                 modem.waitResponse();
             }
+            else
+            {
+                logger.logPrintF(LogSeverity::WARNING, MODULE, "Unknown network type: %s", modemStatus.gsmNetworkType.c_str());
+            }
 
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Network type: %s", modemStatus.gsmNetworkType.c_str());
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Operator: %s", modemStatus.gsmOperator.c_str());
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Frequency: %s", modemStatus.gsmFrequency.c_str());
+        }
+        else
+        {
+            logger.logPrintF(LogSeverity::ERROR, MODULE, "Failed to get +CPSI modem info response");
         }
     }
 }

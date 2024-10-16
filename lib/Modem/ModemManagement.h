@@ -39,6 +39,7 @@ enum class ModemManagementState
     GPS_POWERING_OFF,
     IDLE,
     MODEM_ENABLE,
+    INVALID
 };
 
 class MqttSubscribedTopic
@@ -77,7 +78,7 @@ private:
 
     String getNextSubstring(const String &input, char separator, int *iterator);
 
-    ModemManagementState state = ModemManagementState::POWER_OFF;
+    ModemManagementState state = ModemManagementState::INVALID;
 
     ModemStatusData modemStatus;
 
