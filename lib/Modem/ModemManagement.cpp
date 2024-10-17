@@ -109,9 +109,9 @@ void ModemManagement::loop()
 
         if (success)
         {
-            modem.setBaud(921600);
-            SerialAT.end();
-            SerialAT.begin(921600, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
+            // modem.setBaud(921600);
+            // SerialAT.end();
+            // SerialAT.begin(921600, SERIAL_8N1, BOARD_MODEM_RXD_PIN, BOARD_MODEM_TXD_PIN);
 
             logger.logPrintF(LogSeverity::DEBUG, MODULE, "Modem initialized");
 
@@ -368,10 +368,11 @@ void ModemManagement::loop()
         if (modemStatus.modemPoweredOn)
         {
 
-            if(!modem.testAT())
+            if (!modem.testAT())
             {
                 logger.logPrintF(LogSeverity::ERROR, MODULE, "Modem not responding - going to reset mode...");
                 state = ModemManagementState::MODEM_POWERING_ON1;
+                break;
             }
             if (!modemPowerOnRequest)
             {

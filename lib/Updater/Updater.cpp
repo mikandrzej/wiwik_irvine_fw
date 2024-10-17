@@ -34,7 +34,7 @@ void Updater::loop()
         int status = modem.httpAction(HTTP_ACTION_GET);
         if (status != 200)
         {
-            updateError("HTTP GET chunk list fail");
+            updateError("HTTP GET chunk list fail, code: %d", status);
             updateState = UpdateState::IDLE;
             break;
         }
@@ -52,7 +52,7 @@ void Updater::loop()
 
         if (length >= sizeof(buf))
         {
-            updateError("Chunk list file exceed %u", sizeof(buf));
+            updateError("Chunk list file: %u, exceed %u", length, sizeof(buf));
             updateState = UpdateState::IDLE;
             break;
         }
@@ -60,7 +60,8 @@ void Updater::loop()
         int bytesRead = modem.getHttpResponse(length, buf);
         if (bytesRead != length)
         {
-            updateError("Chunk list HTTP Read failed");
+            updateError("Chunk list HTTP Read failed - response: %d , expected: %d", bytesRead, length);
+            logger.logPrintF(LogSeverity::WARNING, MODULE, "Invalid length of http response: %d , expected: %d", bytesRead, length);
             updateState = UpdateState::IDLE;
             break;
         }
@@ -121,18 +122,21 @@ void Updater::loop()
             logger.logPrintF(LogSeverity::INFO, MODULE, "Update chunk %u: %s", t, chunkFiles[t]);
         }
 
+        Update.end();
         if (!Update.begin(totalLength))
         {
             modem.httpTerminate();
 
             const char *err_str = Update.errorString();
-            updateError("Update error: %s", Update.errorString());
+            updateError("Update error: %s, total length: %u", Update.errorString(), totalLength);
+            updateState = UpdateState::IDLE;
             break;
         }
 
         updateStatus("Update started");
 
         currentChunk = 0u;
+        currentUpdatePosition = 0u;
         updateState = UpdateState::GET_CHUNK;
     }
     break;
